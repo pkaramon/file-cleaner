@@ -2,6 +2,7 @@ package pl.edu.agh.to2.example.connection;
 
 import javax.sql.DataSource;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import org.postgresql.ds.PGSimpleDataSource;
 
 import java.sql.Connection;
@@ -17,10 +18,14 @@ public class DatabaseConnectionProvider {
 
     static {
         try {
+            Dotenv dotenv = Dotenv.load();
+            String dbUser = dotenv.get("POSTGRES_USER");
+            String dbPassword = dotenv.get("POSTGRES_PASSWORD");
+
             PGSimpleDataSource ds = new PGSimpleDataSource();
             ds.setURL("jdbc:postgresql://localhost:5432/postgres");
-            ds.setUser("myuser");
-            ds.setPassword("mypassword");
+            ds.setUser(dbUser);
+            ds.setPassword(dbPassword);
             dataSource = ds;
 
             LOGGER.info("Creating table files");
@@ -32,7 +37,7 @@ public class DatabaseConnectionProvider {
 
         } catch (Exception e) {
             LOGGER.info("Error during initialization: " + e.getMessage());
-            throw new RuntimeException("Cannot initialize tables");
+            throw new RuntimeException("Cannot initialize database");
         }
     }
 

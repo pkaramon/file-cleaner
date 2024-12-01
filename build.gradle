@@ -34,4 +34,5 @@ dependencies {
     testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.10.1'
 
     implementation 'org.postgresql:postgresql:42.5.0'
+    implementation 'io.github.cdimascio:dotenv-java:3.0.0'
 }
