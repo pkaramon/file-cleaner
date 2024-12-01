@@ -9,7 +9,10 @@
 
 ### Kroki do uruchomienia projektu:
 
-**1. Skonfiguruj bazę danych:**
+**1. Dodaj plik `.env` z zmiennymi środowiskowymi (w pliku `.env.example` znajdują się zmienne, które powinny być ustawione).**
+
+
+**2. Skonfiguruj bazę danych:**
    - Uruchom kontener z bazą danych PostgreSQL za pomocą Docker Compose.
    - W katalogu głównym projektu uruchom następujące polecenie, aby uruchomić kontener z bazą:
      ```bash
