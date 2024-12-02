@@ -36,6 +36,7 @@ public class DatabaseConnectionProvider {
                     "    path VARCHAR(255) NOT NULL, " +
                     "    last_modified TIMESTAMP NOT NULL" +
                     ");");
+            clearTable();
 
         } catch (Exception e) {
             LOGGER.info("Error during initialization: " + e.getMessage());
@@ -50,5 +51,15 @@ public class DatabaseConnectionProvider {
     public static void create(final String insertSql) throws SQLException {
         PreparedStatement ps = dataSource.getConnection().prepareStatement(insertSql);
         ps.execute();
+    }
+
+    private static void clearTable() {
+        String clearSql = "DELETE FROM files";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(clearSql)) {
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            LOGGER.warning("Error clearing table files: " + e.getMessage());
+        }
     }
 }
