@@ -30,9 +30,11 @@ public class DatabaseConnectionProvider {
 
             LOGGER.info("Creating table files");
             create("CREATE TABLE IF NOT EXISTS files (" +
-                    "id SERIAL PRIMARY KEY, " +
-                    "name VARCHAR(100) NOT NULL, " +
-                    "size BIGINT NOT NULL" +
+                    "    id SERIAL PRIMARY KEY, " +
+                    "    name VARCHAR(100) NOT NULL, " +
+                    "    size BIGINT NOT NULL, " +
+                    "    path VARCHAR(255) NOT NULL, " +
+                    "    last_modified TIMESTAMP NOT NULL" +
                     ");");
 
         } catch (Exception e) {
