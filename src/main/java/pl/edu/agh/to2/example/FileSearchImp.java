@@ -1,21 +1,27 @@
 package pl.edu.agh.to2.example;
 
+import org.springframework.stereotype.Component;
+import pl.edu.agh.to2.example.file.FileSearch;
+
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-public class FileSearch {
+@Component
+public class FileSearchImp implements FileSearch {
 
-    private Pattern pattern;
-    public FileSearch(String pattern) {
+    private final Pattern pattern;
+
+    public FileSearchImp(String pattern) {
         this.pattern = Pattern.compile(pattern);
     }
 
-    public FileSearch() {
+    public FileSearchImp() {
+        this(null);
     }
 
-    public List<File> searchDirectory(String path) {
+    public Iterable<File> searchDirectory(String path) {
         List<File> fileList = new LinkedList<>();
         File dir = new File(path);
         if (!dir.exists() || !dir.isDirectory()) {
@@ -29,15 +35,15 @@ public class FileSearch {
 
     private void search(List<File> fileList, File dir) {
         File[] filesList = dir.listFiles();
-        if(filesList == null) {
+        if (filesList == null) {
             return;
         }
-        for(File file : filesList) {
-            if(file.isDirectory()) {
+        for (File file : filesList) {
+            if (file.isDirectory()) {
                 search(fileList, file);
             } else {
-                if(pattern == null || pattern.matcher(file.getName()).matches()) {
-                    System.out.println("File path: "+file.getName());
+                if (pattern == null || pattern.matcher(file.getName()).matches()) {
+                    System.out.println("File path: " + file.getName());
                     fileList.add(file);
                 }
             }
