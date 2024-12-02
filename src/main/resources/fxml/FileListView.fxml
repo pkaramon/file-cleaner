@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.BorderPane?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            xmlns="http://javafx.com/javafx"
+            fx:controller="pl.edu.agh.to2.example.FileListViewController">
+
+
+    <center>
+        <ListView fx:id="fileListView" style="-fx-padding: 10;" />
+    </center>
+</BorderPane>
