@@ -23,6 +23,17 @@ public class Main {
         try (Connection connection = DatabaseConnectionProvider.getConnection()) {
             List<File> foundFiles = fileSearch.searchDirectory(path);
             saveFilesToDatabase(connection, foundFiles);
+
+            System.out.println("Press number of largest files to display: ");
+            int n = scanner.nextInt();
+            String sql = "SELECT name, size FROM files ORDER BY size DESC LIMIT ?";
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                ps.setInt(1, n);
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    System.out.println(rs.getString("name") + " " + rs.getLong("size"));
+                }
+            }
         } catch (SQLException e) {
             log.warning("Error during connection initialization: " + e.getMessage());
         }
