@@ -1,13 +1,15 @@
 package pl.edu.agh.to2.example;
 
-import javafx.application.Application;
 import pl.edu.agh.to2.example.connection.DatabaseConnectionProvider;
+import pl.edu.agh.to2.example.file.FileSearch;
 
 import java.io.File;
 import java.sql.*;
 import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
+import java.util.stream.StreamSupport;
 
 public class Main {
 
@@ -18,10 +20,12 @@ public class Main {
         System.out.println("Enter path: ");
 
         String path = scanner.nextLine();
-        FileSearch fileSearch = new FileSearch(".*\\.txt$");
+        FileSearch fileSearch = new FileSearchImp();
+        Pattern txtPattern = Pattern.compile(".*\\.txt$");
 
         try (Connection connection = DatabaseConnectionProvider.getConnection()) {
-            List<File> foundFiles = fileSearch.searchDirectory(path);
+            List<File> foundFiles = StreamSupport.stream(fileSearch.searchDirectory(path, txtPattern).spliterator(), false)
+                    .toList();
             saveFilesToDatabase(connection, foundFiles);
 
             System.out.println("Press number of largest files to display: ");
