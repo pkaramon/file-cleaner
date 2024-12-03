@@ -2,6 +2,8 @@ package pl.edu.agh.to2.example.file;
 
 import jakarta.persistence.*;
 
+import java.util.Objects;
+
 @Entity
 @Table(
         indexes = {
@@ -65,5 +67,29 @@ public class File {
 
     public void setLastModified(long lastModified) {
         this.lastModified = lastModified;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        File file = (File) o;
+        return getId() == file.getId() &&
+                getSize() == file.getSize() &&
+                getLastModified() == file.getLastModified()
+                && Objects.equals(getName(), file.getName())
+                && Objects.equals(getPath(), file.getPath());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                getId(),
+                getName(),
+                getPath(),
+                getSize(),
+                getLastModified()
+        );
     }
 }

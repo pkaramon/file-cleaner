@@ -10,10 +10,7 @@ import pl.edu.agh.to2.example.actionLog.ActionType;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 @Service
@@ -53,13 +50,14 @@ public class FileService {
     private void addOrUpdateRecordsInDatabase(Iterable<java.io.File> fileInDirectory,
                                               Set<String> pathsInDirectory,
                                               Map<String, File> fileMap) {
+        List<File> toSave = new ArrayList<>();
         for (java.io.File file : fileInDirectory) {
             String filePath = file.getPath();
             pathsInDirectory.add(filePath);
             File dbFile = fileMap.get(filePath);
             if (dbFile == null) {
                 File newFile = new File(file.getName(), filePath, file.length(), file.lastModified());
-                fileRepository.save(newFile);
+                toSave.add(newFile);
                 logger.info("File added: {}", newFile.getName());
             } else if (dbFile.getLastModified() != file.lastModified()) {
                 dbFile.setLastModified(file.lastModified());
@@ -70,6 +68,8 @@ public class FileService {
                 logger.info("File already up to date: {}", dbFile.getName());
             }
         }
+        fileRepository.flush();
+        fileRepository.saveAll(toSave);
     }
 
     private void deleteRecordsInDatabaseIfNoLongerInFileSystem(Map<String, File> fileMap, Set<String> pathsInDirectory) {
