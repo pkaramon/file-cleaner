@@ -26,4 +26,6 @@ public interface FileRepository extends JpaRepository<File, Long> {
 
     @Query("SELECT f from File f WHERE f.path LIKE :path% ORDER BY f.size DESC LIMIT :limit")
     List<File> findLargestFilesIn(String path, int limit);
+
+    void deleteByPath(String path);
 }

@@ -1,7 +1,7 @@
 package pl.edu.agh.to2.example;
 
 import pl.edu.agh.to2.example.connection.DatabaseConnectionProvider;
-import pl.edu.agh.to2.example.file.FileSearch;
+import pl.edu.agh.to2.example.file.FileSystemService;
 
 import java.io.File;
 import java.sql.*;
@@ -20,11 +20,11 @@ public class Main {
         System.out.println("Enter path: ");
 
         String path = scanner.nextLine();
-        FileSearch fileSearch = new FileSearchImp();
+        FileSystemService fileSystemService = new FileSystemServiceImp();
         Pattern txtPattern = Pattern.compile(".*\\.txt$");
 
         try (Connection connection = DatabaseConnectionProvider.getConnection()) {
-            List<File> foundFiles = StreamSupport.stream(fileSearch.searchDirectory(path, txtPattern).spliterator(), false)
+            List<File> foundFiles = StreamSupport.stream(fileSystemService.searchDirectory(path, txtPattern).spliterator(), false)
                     .toList();
             saveFilesToDatabase(connection, foundFiles);
 

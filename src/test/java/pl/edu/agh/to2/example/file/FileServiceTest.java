@@ -4,13 +4,20 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import pl.edu.agh.to2.example.actionLog.ActionLogRepository;
+import pl.edu.agh.to2.example.actionLog.ActionType;
 
+import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -23,6 +30,7 @@ import static org.mockito.Mockito.*;
 @AutoConfigureTestDatabase
 @Transactional
 class FileServiceTest {
+    private static final Pattern defaultPattern = Pattern.compile(".*");
     @Autowired
     @InjectMocks
     private FileService fileService;
@@ -31,13 +39,28 @@ class FileServiceTest {
     private FileRepository fileRepository;
 
     @MockBean
-    private FileSearch fileSearch;
+    private FileSystemService fileSystemService;
+
+    @SpyBean
+    private ActionLogRepository actionLogRepository;
+
+    @MockBean
+    private Clock clock;
+
+    private static java.io.File createSpyFile(String path, long size, long lastModified) {
+        var a = Mockito.spy(new java.io.File(path));
+        when(a.getName()).thenReturn(Path.of(path).getFileName().toString());
+        when(a.getPath()).thenReturn(path);
+        when(a.length()).thenReturn(size);
+        when(a.lastModified()).thenReturn(lastModified);
+        return a;
+    }
 
     @BeforeEach
     void setupDb() {
         fileRepository.deleteAll();
+        actionLogRepository.deleteAll();
     }
-
 
     void addSampleDataToDatabase() {
         File a = new File("a.txt", "Documents/a.txt", 100, 100);
@@ -63,26 +86,14 @@ class FileServiceTest {
     @Test
     void testLoadFromPath_WhenDatabaseIsEmpty() {
         // given
-        Pattern pattern = Pattern.compile(".*\\.txt");
-        var a = Mockito.spy(new java.io.File("Documents/a.txt"));
-        var b = Mockito.spy(new java.io.File("Documents/b.txt"));
+        var a = createSpyFile("Documents/a.txt", 100, 100);
+        var b = createSpyFile("Documents/b.txt", 300, 300);
 
-        when(a.getName()).thenReturn("a.txt");
-        when(a.getPath()).thenReturn("Documents/a.txt");
-        when(a.length()).thenReturn(100L);
-        when(a.lastModified()).thenReturn(100L);
-
-
-        when(b.getName()).thenReturn("b.txt");
-        when(b.getPath()).thenReturn("Documents/b.txt");
-        when(b.length()).thenReturn(300L);
-        when(b.lastModified()).thenReturn(300L);
-
-        when(fileSearch.searchDirectory("Documents/", pattern)).thenReturn(
+        when(fileSystemService.searchDirectory("Documents/", defaultPattern)).thenReturn(
                 List.of(a, b));
 
         // when
-        fileService.loadFromPath("Documents/", pattern);
+        fileService.loadFromPath("Documents/", defaultPattern);
 
         // then
         List<File> files = fileService.findFilesInPath("Documents/");
@@ -94,36 +105,65 @@ class FileServiceTest {
     @Test
     void testLoadFromPath_NoUpdateWhenLastModifiedNotChanged() {
         // given
-        Pattern pattern = Pattern.compile(".*\\.txt");
-        var a = Mockito.spy(new java.io.File("Documents/a.txt"));
-        var b = Mockito.spy(new java.io.File("Documents/b.txt"));
+        var a = createSpyFile("Documents/a.txt", 100, 100);
+        var b = createSpyFile("Documents/b.txt", 300, 300);
 
-        when(a.getName()).thenReturn("a.txt");
-        when(a.getPath()).thenReturn("Documents/a.txt");
-        when(a.length()).thenReturn(100L);
-        when(a.lastModified()).thenReturn(100L);
-
-        when(b.getName()).thenReturn("b.txt");
-        when(b.getPath()).thenReturn("Documents/b.txt");
-        when(b.length()).thenReturn(300L);
-        when(b.lastModified()).thenReturn(300L);
-
-        when(fileSearch.searchDirectory("Documents/", pattern)).thenReturn(
+        when(fileSystemService.searchDirectory("Documents/", defaultPattern)).thenReturn(
                 List.of(a, b));
 
-        fileService.loadFromPath("Documents/", pattern);
+        fileService.loadFromPath("Documents/", defaultPattern);
 
         when(a.lastModified()).thenReturn(123321L);
 
-        // then
-        fileService.loadFromPath("Documents/", pattern);
+        // when
+        fileService.loadFromPath("Documents/", defaultPattern);
 
         // then
-        // 2 for first time a and b, 1 for a second time a
         verify(fileRepository, times(3)).save(any());
-
         assertEquals(123321L, fileRepository.findByPath("Documents/a.txt").get().getLastModified());
     }
 
+    @Test
+    void testLoadFromPath_WhenFileIsDeletedFromDirectoryItsAlsoDeletedFromDb() {
+        // given
+        var a = createSpyFile("Documents/a.txt", 100, 100);
 
+        when(fileSystemService.searchDirectory("Documents/", defaultPattern)).thenReturn(List.of(a));
+
+        fileService.loadFromPath("Documents/", defaultPattern);
+
+        when(fileSystemService.searchDirectory("Documents/", defaultPattern)).thenReturn(List.of());
+
+        // when
+        fileService.loadFromPath("Documents/", defaultPattern);
+
+        // then
+        assertTrue(fileRepository.findByPath("Documents/a.txt").isEmpty());
+    }
+
+    @Test
+    void testDeleteFile() {
+        // given
+        var a = createSpyFile("Documents/a.txt", 100, 100);
+        when(fileSystemService.searchDirectory("Documents/", defaultPattern)).thenReturn(List.of(a));
+        fileService.loadFromPath("Documents/", defaultPattern);
+        when(fileSystemService.deleteFile("Documents/a.txt")).thenReturn(true);
+        when(clock.instant()).thenReturn(Instant.parse("2024-01-01T07:00:00Z"));
+        when(clock.getZone()).thenReturn(ZoneId.of("UCT"));
+
+        // when
+        fileService.deleteFile("Documents/a.txt");
+
+        // then
+        assertTrue(fileRepository.findByPath("Documents/a.txt").isEmpty());
+        verify(fileSystemService).deleteFile("Documents/a.txt");
+
+        var log = actionLogRepository.findAll().get(0);
+        assertEquals("File deleted: Documents/a.txt", log.getDescription());
+        assertEquals(ActionType.DELETE, log.getActionType());
+        var expectedDateTime = Instant.parse("2024-01-01T07:00:00Z")
+                .atZone(ZoneId.of("UCT"))
+                .toLocalDateTime();
+        assertEquals(expectedDateTime, log.getTimestamp());
+    }
 }
