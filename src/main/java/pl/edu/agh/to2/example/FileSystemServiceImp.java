@@ -1,5 +1,7 @@
 package pl.edu.agh.to2.example;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import pl.edu.agh.to2.example.file.FileSystemService;
 
@@ -11,13 +13,14 @@ import java.util.regex.Pattern;
 
 @Component
 public class FileSystemServiceImp implements FileSystemService {
+    private static final Logger logger = LoggerFactory.getLogger(FileSystemServiceImp.class);
 
     @Override
     public Collection<File> searchDirectory(String path, Pattern pattern) {
         List<File> fileList = new LinkedList<>();
         File dir = new File(path);
         if (!dir.exists() || !dir.isDirectory()) {
-            System.out.println("Invalid folder path provided.");
+            logger.info("Invalid folder path provided.");
             return fileList;
         }
         search(fileList, dir, pattern);
@@ -35,7 +38,7 @@ public class FileSystemServiceImp implements FileSystemService {
                 search(fileList, file, pattern);
             } else {
                 if (pattern == null || pattern.matcher(file.getName()).matches()) {
-                    System.out.println("File path: " + file.getName());
+                    logger.info("File path: {}", file.getName());
                     fileList.add(file);
                 }
             }
@@ -48,7 +51,7 @@ public class FileSystemServiceImp implements FileSystemService {
         try {
             return file.delete();
         } catch (Exception e) {
-            System.out.println("Error occurred while deleting file: " + e.getMessage());
+            logger.info("Error occurred while deleting file: {}", e.getMessage());
             return false;
         }
     }
