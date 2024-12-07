@@ -5,12 +5,14 @@ import javafx.scene.control.ListView;
 import org.springframework.stereotype.Component;
 import pl.edu.agh.to2.example.file.FileService;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 
 @Component
 public class FileListViewController {
 
     private final FileService fileService;
-
     @FXML
     private ListView<String> fileListView;
     private String directoryPath;
@@ -31,6 +33,8 @@ public class FileListViewController {
         task.setOnSucceeded(event -> fileListView.getItems().setAll(task.getValue()));
         task.setOnFailed(event -> fileListView.getItems().setAll("Error loading files."));
 
-        new Thread(task).start();
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        executorService.submit(task);
+        executorService.shutdown();
     }
 }
