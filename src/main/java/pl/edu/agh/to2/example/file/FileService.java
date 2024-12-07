@@ -39,6 +39,7 @@ public class FileService {
         // We may want to consider a more efficient way of doing this if
         // some metadata is expensive to compute.
         fileRepository.deleteAll();
+        fileRepository.flush();
         var files = fileSystemService.searchDirectory(path, pattern);
 
         var fileRecords = files.stream()

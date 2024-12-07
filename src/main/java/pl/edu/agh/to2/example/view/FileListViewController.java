@@ -3,11 +3,8 @@ package pl.edu.agh.to2.example.view;
 import javafx.fxml.FXML;
 import javafx.scene.control.ListView;
 import org.springframework.stereotype.Component;
-import pl.edu.agh.to2.example.file.File;
 import pl.edu.agh.to2.example.file.FileService;
 
-import java.util.List;
-import java.util.regex.Pattern;
 
 @Component
 public class FileListViewController {
@@ -28,10 +25,12 @@ public class FileListViewController {
     }
 
     private void updateFileList() {
-        fileService.loadFromPath(directoryPath, Pattern.compile(".*"));
-        List<File> files = fileService.findLargestFilesIn(directoryPath, 10);
-        files.forEach(file -> fileListView.getItems().add(
-                "%s (%d bytes)".formatted(file.getPath(), file.getSize())
-        ));
+        fileListView.getItems().setAll("Loading files...");
+
+        LoadLargestFiles task = new LoadLargestFiles(directoryPath, fileService);
+        task.setOnSucceeded(event -> fileListView.getItems().setAll(task.getValue()));
+        task.setOnFailed(event -> fileListView.getItems().setAll("Error loading files."));
+
+        new Thread(task).start();
     }
 }

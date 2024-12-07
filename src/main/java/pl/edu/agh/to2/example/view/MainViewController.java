@@ -43,6 +43,8 @@ public class MainViewController {
         FileListViewController controller = (FileListViewController) res.controller();
         controller.setDirectoryPath(path);
         Stage stage = (Stage) pathInput.getScene().getWindow();
+        stage.setMinHeight(400);
+        stage.setMinWidth(600);
         stage.setScene(scene);
     }
 
