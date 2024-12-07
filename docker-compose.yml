@@ -1,0 +1,12 @@
+services:
+  db:
+    image: postgres
+    env_file:
+      - ./src/main/resources/.env
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+        - "5432:5432"

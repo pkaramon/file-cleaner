@@ -1,6 +1,9 @@
 plugins {
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.1.0'
+    id 'org.springframework.boot' version '3.1.0'
+    id 'io.spring.dependency-management' version '1.1.0'
+    id 'java'
 }
 
 group 'pl.edu.agh.to2'
@@ -13,7 +16,7 @@ repositories {
 }
 
 application {
-    mainClassName = 'Main'
+    mainClassName = 'pl.edu.agh.to2.example.App'
 }
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -30,6 +33,16 @@ test {
 }
 
 dependencies {
-	testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.10.1'
-    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.10.1'
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-devtools'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.7.1'
+    testImplementation 'com.h2database:h2'
+
+    implementation 'org.postgresql:postgresql:42.5.0'
+    implementation 'io.github.cdimascio:dotenv-java:3.0.0'
+
 }
