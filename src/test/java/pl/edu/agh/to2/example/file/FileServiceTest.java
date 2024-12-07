@@ -4,7 +4,6 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -100,27 +99,6 @@ class FileServiceTest {
         assertEquals(2, files.size());
         assertTrue(files.contains(fileRepository.findByPath("Documents/a.txt").get()));
         assertTrue(files.contains(fileRepository.findByPath("Documents/b.txt").get()));
-    }
-
-    @Test
-    void testLoadFromPath_NoUpdateWhenLastModifiedNotChanged() {
-        // given
-        var a = createSpyFile("Documents/a.txt", 100, 100);
-        var b = createSpyFile("Documents/b.txt", 300, 300);
-
-        when(fileSystemService.searchDirectory("Documents/", defaultPattern)).thenReturn(
-                List.of(a, b));
-
-        fileService.loadFromPath("Documents/", defaultPattern);
-
-        when(a.lastModified()).thenReturn(123321L);
-
-        // when
-        fileService.loadFromPath("Documents/", defaultPattern);
-
-        // then
-        verify(fileRepository, times(3)).save(any());
-        assertEquals(123321L, fileRepository.findByPath("Documents/a.txt").get().getLastModified());
     }
 
     @Test

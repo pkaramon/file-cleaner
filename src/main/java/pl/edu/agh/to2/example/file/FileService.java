@@ -10,7 +10,7 @@ import pl.edu.agh.to2.example.actionLog.ActionType;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
 import java.util.regex.Pattern;
 
 @Service
@@ -34,54 +34,22 @@ public class FileService {
 
     @Transactional
     public void loadFromPath(String path, Pattern pattern) {
-        var fileInDirectory = fileSystemService.searchDirectory(path, pattern);
-        // Checking if file already exists in database, and it's state is up to date
-        // is currently pretty much pointless. It would make sense if we stored lots of
-        // expensive to compute data about files
+        // NOTE: Creating a new database from the files in the directory
+        // is cheap for now, because we are only storing basic information about the files.
+        // We may want to consider a more efficient way of doing this if
+        // some metadata is expensive to compute.
+        fileRepository.deleteAll();
+        var files = fileSystemService.searchDirectory(path, pattern);
 
-        Map<String, File> fileMap = fileRepository.getMapFromPathToFile();
-        Set<String> pathsInDirectory = new HashSet<>();
-
-        addOrUpdateRecordsInDatabase(fileInDirectory, pathsInDirectory, fileMap);
-        deleteRecordsInDatabaseIfNoLongerInFileSystem(fileMap, pathsInDirectory);
-    }
-
-
-    private void addOrUpdateRecordsInDatabase(Iterable<java.io.File> fileInDirectory,
-                                              Set<String> pathsInDirectory,
-                                              Map<String, File> fileMap) {
-        List<File> toSave = new ArrayList<>();
-        for (java.io.File file : fileInDirectory) {
-            String filePath = file.getPath();
-            pathsInDirectory.add(filePath);
-            File dbFile = fileMap.get(filePath);
-            if (dbFile == null) {
-                File newFile = new File(file.getName(), filePath, file.length(), file.lastModified());
-                toSave.add(newFile);
-                logger.info("File added: {}", newFile.getName());
-            } else if (dbFile.getLastModified() != file.lastModified()) {
-                dbFile.setLastModified(file.lastModified());
-                dbFile.setSize(file.length());
-                fileRepository.save(dbFile);
-                logger.info("File updated: {}", dbFile.getName());
-            } else {
-                logger.info("File already up to date: {}", dbFile.getName());
-            }
-        }
-        fileRepository.flush();
-        fileRepository.saveAll(toSave);
-    }
-
-    private void deleteRecordsInDatabaseIfNoLongerInFileSystem(Map<String, File> fileMap, Set<String> pathsInDirectory) {
-        List<File> filesToDelete = fileMap.values().stream()
-                .filter(file -> !pathsInDirectory.contains(file.getPath()))
+        var fileRecords = files.stream()
+                .map(f -> new File(f.getName(), f.getPath(), f.length(), f.lastModified()))
                 .toList();
 
-        fileRepository.deleteAll(filesToDelete);
-        for (File deletedFile : filesToDelete) {
-            logger.info("File deleted: {}", deletedFile.getName());
-        }
+        fileRepository.saveAll(fileRecords);
+
+        logger.info("Files loaded from path: {}. Number of files: {}", path, fileRecords.size());
     }
+
 
     public List<File> findFilesInPath(String directoryPath) {
         return fileRepository.findByPathStartingWith(directoryPath);
