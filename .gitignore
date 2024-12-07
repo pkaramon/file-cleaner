@@ -1,5 +1,5 @@
 .gradle/
 /build/
 /bin/
-.env
+src/main/resources/.env
 /pgdata/

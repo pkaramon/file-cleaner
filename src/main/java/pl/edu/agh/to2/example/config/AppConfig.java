@@ -11,6 +11,7 @@ import java.time.Clock;
 @Configuration
 @ComponentScan("pl.edu.agh.to2.example")
 @PropertySource("classpath:application.properties")
+@PropertySource("classpath:./.env")
 public class AppConfig {
     @Bean
     public Dotenv dotenv() {
