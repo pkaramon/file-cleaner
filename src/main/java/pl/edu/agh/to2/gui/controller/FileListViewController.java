@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import pl.edu.agh.to2.model.File;
 import pl.edu.agh.to2.service.FileService;
 
+import java.util.regex.Pattern;
+
 @Component
 public class FileListViewController {
 
@@ -37,6 +39,7 @@ public class FileListViewController {
 
     public void setDirectoryPath(String path) {
         this.directoryPath = path;
+        updateFileList();
         loadAllFiles();
     }
 
@@ -61,6 +64,9 @@ public class FileListViewController {
         }
     }
 
+    private void updateFileList() {
+        fileService.loadFromPath(directoryPath, Pattern.compile(".*"));
+    }
     private void loadAllFiles() {
         var files = fileService.findFilesInPath(directoryPath);
         updateTable(files);
