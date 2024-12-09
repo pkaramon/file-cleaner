@@ -16,7 +16,7 @@ repositories {
 }
 
 application {
-    mainClassName = 'pl.edu.agh.to2.example.App'
+    mainClass = 'pl.edu.agh.to2.example.SpringApp'
 }
 java {
     sourceCompatibility = JavaVersion.VERSION_17
