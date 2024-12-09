@@ -35,14 +35,19 @@ public class MainViewController {
     @FXML
     public void onAcceptClicked() {
         String path = pathInput.getText();
-        if (path == null || path.isEmpty()) {
+        if (path == null || path.trim().isEmpty()) {
+            pathInput.setStyle("-fx-border-color: red; -fx-border-width: 2;");
             System.out.println("Path is empty!");
+            return;
         }
+        pathInput.setStyle("");
 
         var res = loader.load("/fxml/FileListView.fxml");
         Scene scene = res.scene();
         FileListViewController controller = (FileListViewController) res.controller();
         controller.setDirectoryPath(path);
+
+
         Stage stage = (Stage) pathInput.getScene().getWindow();
         stage.setMinHeight(400);
         stage.setMinWidth(600);
