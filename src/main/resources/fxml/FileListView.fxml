@@ -4,7 +4,7 @@
 <?import javafx.scene.layout.BorderPane?>
 <BorderPane xmlns:fx="http://javafx.com/fxml"
             xmlns="http://javafx.com/javafx"
-            fx:controller="pl.edu.agh.to2.view.FileListViewController">
+            fx:controller="pl.edu.agh.to2.gui.controller.FileListViewController">
 
 
     <center>

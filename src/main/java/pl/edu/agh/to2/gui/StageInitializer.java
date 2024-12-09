@@ -1,4 +1,4 @@
-package pl.edu.agh.to2;
+package pl.edu.agh.to2.gui;
 
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -6,7 +6,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 import pl.edu.agh.to2.applicationEvent.StageReadyEvent;
-import pl.edu.agh.to2.view.SpringFXMLLoader;
+import pl.edu.agh.to2.gui.utils.SpringFXMLLoader;
 
 @Component
 public class StageInitializer implements ApplicationListener<StageReadyEvent> {

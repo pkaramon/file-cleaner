@@ -1,8 +1,9 @@
-package pl.edu.agh.to2;
+package pl.edu.agh.to2.service;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import pl.edu.agh.to2.service.FileSystemServiceImp;
 
 import java.io.File;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package pl.edu.agh.to2.view;
+package pl.edu.agh.to2.gui.utils;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;

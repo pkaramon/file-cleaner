@@ -1,9 +1,10 @@
-package pl.edu.agh.to2.file;
+package pl.edu.agh.to2.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import pl.edu.agh.to2.model.File;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,4 +26,5 @@ public interface FileRepository extends JpaRepository<File, Long> {
     @Modifying
     @Query("DELETE FROM File f")
     void deleteAll();
+
 }

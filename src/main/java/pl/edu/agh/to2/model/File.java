@@ -1,4 +1,4 @@
-package pl.edu.agh.to2.file;
+package pl.edu.agh.to2.model;
 
 import jakarta.persistence.*;
 
