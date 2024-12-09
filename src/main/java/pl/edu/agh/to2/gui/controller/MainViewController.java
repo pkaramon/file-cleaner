@@ -1,4 +1,4 @@
-package pl.edu.agh.to2.example.view;
+package pl.edu.agh.to2.gui.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
@@ -6,6 +6,7 @@ import javafx.scene.control.TextField;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import org.springframework.stereotype.Component;
+import pl.edu.agh.to2.gui.utils.SpringFXMLLoader;
 
 import java.io.File;
 

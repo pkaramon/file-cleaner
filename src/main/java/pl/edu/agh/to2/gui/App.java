@@ -1,11 +1,12 @@
-package pl.edu.agh.to2.example;
+package pl.edu.agh.to2.gui;
 
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.Stage;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
-import pl.edu.agh.to2.example.applicationEvent.StageReadyEvent;
+import pl.edu.agh.to2.SpringApp;
+import pl.edu.agh.to2.applicationEvent.StageReadyEvent;
 
 public class App extends Application {
 

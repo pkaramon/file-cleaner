@@ -1,7 +1,8 @@
-package pl.edu.agh.to2.example;
+package pl.edu.agh.to2;
 
 import javafx.application.Application;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import pl.edu.agh.to2.gui.App;
 
 @SpringBootApplication
 public class SpringApp {

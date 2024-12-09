@@ -31,7 +31,7 @@
 
 - Aplikacja wykorzystuje **JavaFX** do budowy interfejsu graficznego.
 - Używamy frameworków **Spring Boot** i **Hibernate** do
-  zarządzania bazą danych i do wstrzykiwania zalężnośći.
+  zarządzania bazą danych i do wstrzykiwania zależności.
 - Projekt używa biblioteki **PostgreSQL** do komunikacji z bazą danych.
 
 ## Milestone 1
@@ -52,21 +52,21 @@ zwraca listę dziesięciu największych plików w danym katalogu.
 
 ### Schemat bazy danych
 
-Używamy dwóch tabel jedna dla informacji o plikach druga na logi o wykonywanych akcjach.
+Używamy dwóch tabel - jedna przechowywuje informacje o plikach, a druga logi o wykonywanych akcjach.
 
 ![Schemat bazy](docs/db_schema.png)
 
 ### Krótki opis najważniejszych klas
 
 - **File** - encja, klasa reprezentująca plik w bazie danych, zawiera podstawowe informacje, takie jak nazwa, rozmiar,
-  ścieżka, czas modifikacji.
-- **ActionLog** - encja, klasa reprezentująca logi akcji, zawiera informacje:  czas wykonania, opis,
-  typ akcji
+  ścieżka, data ostatniej modifikacji.
+- **ActionLog** - encja, klasa reprezentująca logi akcji, zawiera następujące informacje:  czas wykonania, opis,
+  typ akcji.
 - **FileService** - serwis, który odpowiada za operacje na plikach, takie jak zapisywanie do bazy danych,
   szukanie największych plików etc.
 - **ActionLogRepository** i **FileRepository** - interfejsy, które odpowiadają za komunikację z bazą danych i
   wykonywanie
-  jak narazie prostych operacji CRUD.
+  jak na razie prostych operacji CRUD.
 - **FileSystemService** - abstrakcja nad systemem plików, która pozwala na łatwe testowanie aplikacji.
 - **FileSystemServiceImp** - implementacja interfejsu **FileSystemService**.
 - **FileListViewController** - kontroler, który odpowiada za obsługę widoku, który wyświetla listę plików.

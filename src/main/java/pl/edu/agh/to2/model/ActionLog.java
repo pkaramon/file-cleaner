@@ -1,6 +1,7 @@
-package pl.edu.agh.to2.example.actionLog;
+package pl.edu.agh.to2.model;
 
 import jakarta.persistence.*;
+import pl.edu.agh.to2.types.ActionType;
 
 import java.time.LocalDateTime;
 
