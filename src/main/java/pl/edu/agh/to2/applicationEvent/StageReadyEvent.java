@@ -1,4 +1,4 @@
-package pl.edu.agh.to2.example.applicationEvent;
+package pl.edu.agh.to2.applicationEvent;
 
 import javafx.stage.Stage;
 import org.springframework.context.ApplicationEvent;

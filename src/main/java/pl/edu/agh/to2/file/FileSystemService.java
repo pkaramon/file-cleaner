@@ -1,4 +1,4 @@
-package pl.edu.agh.to2.example.file;
+package pl.edu.agh.to2.file;
 
 import java.io.File;
 import java.util.Collection;

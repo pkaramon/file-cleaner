@@ -1,4 +1,4 @@
-package pl.edu.agh.to2.example.config;
+package pl.edu.agh.to2.config;
 
 import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.context.annotation.Bean;
@@ -9,7 +9,7 @@ import org.springframework.context.annotation.PropertySource;
 import java.time.Clock;
 
 @Configuration
-@ComponentScan("pl.edu.agh.to2.example")
+@ComponentScan("pl.edu.agh.to2")
 @PropertySource("classpath:application.properties")
 @PropertySource("classpath:./.env")
 public class AppConfig {

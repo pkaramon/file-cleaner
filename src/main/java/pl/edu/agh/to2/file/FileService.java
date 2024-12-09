@@ -1,12 +1,12 @@
-package pl.edu.agh.to2.example.file;
+package pl.edu.agh.to2.file;
 
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import pl.edu.agh.to2.example.actionLog.ActionLog;
-import pl.edu.agh.to2.example.actionLog.ActionLogRepository;
-import pl.edu.agh.to2.example.actionLog.ActionType;
+import pl.edu.agh.to2.actionLog.ActionLog;
+import pl.edu.agh.to2.actionLog.ActionLogRepository;
+import pl.edu.agh.to2.actionLog.ActionType;
 
 import java.time.Clock;
 import java.time.LocalDateTime;

@@ -1,6 +1,7 @@
-package pl.edu.agh.to2.example.file;
+package pl.edu.agh.to2.file;
 
 import jakarta.transaction.Transactional;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -10,8 +11,8 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
-import pl.edu.agh.to2.example.actionLog.ActionLogRepository;
-import pl.edu.agh.to2.example.actionLog.ActionType;
+import pl.edu.agh.to2.actionLog.ActionLogRepository;
+import pl.edu.agh.to2.actionLog.ActionType;
 
 import java.nio.file.Path;
 import java.time.Clock;
@@ -138,7 +139,7 @@ class FileServiceTest {
 
         var log = actionLogRepository.findAll().get(0);
         assertEquals("File deleted: Documents/a.txt", log.getDescription());
-        assertEquals(ActionType.DELETE, log.getActionType());
+        Assertions.assertEquals(ActionType.DELETE, log.getActionType());
         var expectedDateTime = Instant.parse("2024-01-01T07:00:00Z")
                 .atZone(ZoneId.of("UCT"))
                 .toLocalDateTime();

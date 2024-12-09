@@ -1,4 +1,4 @@
-package pl.edu.agh.to2.example.file;
+package pl.edu.agh.to2.file;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

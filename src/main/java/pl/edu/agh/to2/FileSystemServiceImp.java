@@ -1,9 +1,9 @@
-package pl.edu.agh.to2.example;
+package pl.edu.agh.to2;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import pl.edu.agh.to2.example.file.FileSystemService;
+import pl.edu.agh.to2.file.FileSystemService;
 
 import java.io.File;
 import java.util.Collection;

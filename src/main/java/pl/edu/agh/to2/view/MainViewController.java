@@ -1,4 +1,4 @@
-package pl.edu.agh.to2.example.view;
+package pl.edu.agh.to2.view;
 
 import javafx.fxml.FXML;
 import javafx.scene.Scene;

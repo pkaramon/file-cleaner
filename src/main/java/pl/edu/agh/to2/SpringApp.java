@@ -1,4 +1,4 @@
-package pl.edu.agh.to2.example;
+package pl.edu.agh.to2;
 
 import javafx.application.Application;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

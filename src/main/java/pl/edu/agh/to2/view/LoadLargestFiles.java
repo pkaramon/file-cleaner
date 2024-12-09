@@ -1,8 +1,8 @@
-package pl.edu.agh.to2.example.view;
+package pl.edu.agh.to2.view;
 
 import javafx.concurrent.Task;
-import pl.edu.agh.to2.example.file.File;
-import pl.edu.agh.to2.example.file.FileService;
+import pl.edu.agh.to2.file.File;
+import pl.edu.agh.to2.file.FileService;
 
 import java.util.List;
 import java.util.regex.Pattern;

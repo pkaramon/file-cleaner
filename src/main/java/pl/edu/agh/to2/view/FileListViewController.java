@@ -1,9 +1,9 @@
-package pl.edu.agh.to2.example.view;
+package pl.edu.agh.to2.view;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.ListView;
 import org.springframework.stereotype.Component;
-import pl.edu.agh.to2.example.file.FileService;
+import pl.edu.agh.to2.file.FileService;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

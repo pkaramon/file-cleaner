@@ -1,4 +1,4 @@
-package pl.edu.agh.to2.example;
+package pl.edu.agh.to2;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

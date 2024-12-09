@@ -1,4 +1,4 @@
-package pl.edu.agh.to2.example.actionLog;
+package pl.edu.agh.to2.actionLog;
 
 public enum ActionType {
     DELETE,
