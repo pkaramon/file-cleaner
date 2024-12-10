@@ -3,19 +3,33 @@ package pl.edu.agh.to2.gui.controller;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.BorderPane;
 import org.springframework.stereotype.Component;
+import pl.edu.agh.to2.gui.task.BackgroundTask;
 import pl.edu.agh.to2.model.File;
 import pl.edu.agh.to2.service.FileService;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 @Component
 public class FileListViewController {
 
     private final FileService fileService;
+
+    @FXML
+    private BorderPane borderPane;
+
+    @FXML
+    private ProgressIndicator progressIndicator;
 
     @FXML
     private TableView<FileRow> fileTableView;
@@ -40,7 +54,6 @@ public class FileListViewController {
     public void setDirectoryPath(String path) {
         this.directoryPath = path;
         updateFileList();
-        loadAllFiles();
     }
 
     @FXML
@@ -51,25 +64,63 @@ public class FileListViewController {
     @FXML
     private void onLargestClicked() {
         int n = 10;
-        var largestFiles = fileService.findLargestFilesIn(directoryPath, n);
-        updateTable(largestFiles);
+        runLongRunningTask(() -> fileService.findLargestFilesIn(directoryPath, n), this::updateTable);
     }
 
     @FXML
     private void onDeleteClicked() {
         var selectedRows = fileTableView.getSelectionModel().getSelectedItems();
-        if (!selectedRows.isEmpty()) {
-            selectedRows.forEach(row -> fileService.deleteFile(row.getPath()));
-            loadAllFiles();
+        var selectedRowsCopy = FXCollections.observableArrayList(selectedRows);
+
+        if (!selectedRowsCopy.isEmpty()) {
+            runLongRunningTask(() -> {
+                        selectedRowsCopy.forEach(row -> fileService.deleteFile(row.getPath()));
+                        return fileService.findFilesInPath(directoryPath);
+                    },
+                    this::updateTable
+            );
         }
     }
 
-    private void updateFileList() {
-        fileService.loadFromPath(directoryPath, Pattern.compile(".*"));
+    private <T> void runLongRunningTask(Supplier<T> supplier,
+                                        Consumer<T> onSuccess) {
+        progressIndicator.setVisible(true);
+        borderPane.setVisible(false);
+        progressIndicator.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
+
+        BackgroundTask<T> task = new BackgroundTask<>(supplier);
+        task.setOnSucceeded(event -> {
+            progressIndicator.setVisible(false);
+            borderPane.setVisible(true);
+            onSuccess.accept(task.getValue());
+        });
+        task.setOnFailed(event -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Error");
+            alert.setHeaderText("Error while loading files");
+            alert.setContentText(task.getException().getMessage());
+            alert.showAndWait();
+            progressIndicator.setVisible(false);
+        });
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(task);
+        executor.shutdown();
     }
+
+    private void updateFileList() {
+        runLongRunningTask(() -> {
+                    fileService.loadFromPath(directoryPath, Pattern.compile(".*"));
+                    return fileService.findFilesInPath(directoryPath);
+                },
+                this::updateTable
+        );
+    }
+
     private void loadAllFiles() {
-        var files = fileService.findFilesInPath(directoryPath);
-        updateTable(files);
+        runLongRunningTask(() -> fileService.findFilesInPath(directoryPath),
+                this::updateTable
+        );
     }
 
     private void updateTable(java.util.List<File> files) {
