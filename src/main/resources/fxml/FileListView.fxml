@@ -1,13 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.cell.PropertyValueFactory?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
 <BorderPane xmlns:fx="http://javafx.com/fxml"
             xmlns="http://javafx.com/javafx"
             fx:controller="pl.edu.agh.to2.gui.controller.FileListViewController">
 
+    <left>
+        <VBox spacing="10" alignment="CENTER" style="-fx-padding: 10;">
+            <Button text="Show All" onAction="#onShowAllClicked" />
+            <Button text="Largest" onAction="#onLargestClicked" />
+            <Button text="Delete" onAction="#onDeleteClicked" />
+        </VBox>
+    </left>
 
     <center>
-        <ListView fx:id="fileListView" style="-fx-padding: 10;"/>
+        <TableView fx:id="fileTableView" style="-fx-padding: 10;">
+            <columns>
+                <TableColumn text="Path" prefWidth="300" fx:id="pathColumn">
+                    <cellValueFactory>
+                        <PropertyValueFactory property="path" />
+                    </cellValueFactory>
+                </TableColumn>
+                <TableColumn text="Size" prefWidth="180" fx:id="sizeColumn">
+                    <cellValueFactory>
+                        <PropertyValueFactory property="size" />
+                    </cellValueFactory>
+                </TableColumn>
+            </columns>
+        </TableView>
     </center>
 </BorderPane>

@@ -61,7 +61,7 @@ public class FileService {
     public List<File> findLargestFilesIn(String path, int n) {
         return fileRepository.findLargestFilesIn(path, n);
     }
-
+    @Transactional
     public void deleteFile(String path) {
         fileSystemService.deleteFile(path);
         fileRepository.deleteByPath(path);
