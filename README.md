@@ -38,17 +38,19 @@
 
 ### Podział pracy
 
-- **Tomasz Kurcoń** - stworzenie bazy danych, implementacja rekursywnego szukania plików
+- **Tomasz Kurcoń** - stworzenie bazy danych, implementacja rekursywnego szukania plików, ulepszenie połączenia Springa i JavaFx
 - **Filip Bieńkowski** - stworzenie interfejsu graficznego
 - **Piotr Karamon** - konfiguracja Springa, połaczenie Springa z JavaFx, stworzenie encji i funkcjonalności wyszukiwania
-  największych plików
-- **Jakub Zawistowski** - usuwanie plików (jeszcze nie podpięte pod ui)
+  największych plików, wielowątkowość w ui
+- **Jakub Zawistowski** - usuwanie plików
 
 ### Stan projektu
 
 Aplikacja obecenie pozwala na wybranie katalogu, który chcemy by został zbadany.
-Po wybraniu katalogów aplikacja zapisuje dane o plikach do bazy, a następnie
-zwraca listę dziesięciu największych plików w danym katalogu.
+Po wybraniu katalogu aplikacja zapisuje dane o plikach do bazy, a następnie
+wyświetla listę znalezionych plików w postaci tabeli.
+Możemy potem wyświetlić 10 największych, lub wyświetlić wszystkie.
+Możemy również usunąć zaznaczone przez nas pliki.
 
 ### Schemat bazy danych
 
@@ -71,7 +73,8 @@ Używamy dwóch tabel - jedna przechowywuje informacje o plikach, a druga logi o
 - **FileSystemServiceImp** - implementacja interfejsu **FileSystemService**.
 - **FileListViewController** - kontroler, który odpowiada za obsługę widoku, który wyświetla listę plików.
 - **MainViewController** - kontroler, który odpowiada za obsługę widoku głównego, który pozwala na wybór katalogu.
-- **LoadLargestFiles** - klasa dziedzicząca z `Task` z JavaFX, która odpowiada za wykonywanie operacji
-  znalezienia największych plików w tle.
+- **BackgroundTask** - klasa dziedzicząca z `Task` z JavaFX, pozwala w łatwy sposób przenosić zapytania do bazy i
+    inne długie zadania
+    na inny wątek, niż ten odpowiedzialny za ui. 
 - **SpringFXMLLoader** - klasa, która pozwala na ładowanie plików FXML z wstrzykiwaniem zależności Springa.
 
