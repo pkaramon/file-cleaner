@@ -97,7 +97,7 @@ public class FileListViewController {
         task.setOnFailed(event -> {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Error");
-            alert.setHeaderText("Error while loading files");
+            alert.setHeaderText("An error occurred");
             alert.setContentText(task.getException().getMessage());
             alert.showAndWait();
             progressIndicator.setVisible(false);
