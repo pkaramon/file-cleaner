@@ -13,10 +13,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import pl.edu.agh.to2.model.File;
 import pl.edu.agh.to2.repository.ActionLogRepository;
-import pl.edu.agh.to2.types.ActionType;
 import pl.edu.agh.to2.repository.FileRepository;
-import pl.edu.agh.to2.service.FileService;
-import pl.edu.agh.to2.service.FileSystemService;
+import pl.edu.agh.to2.types.ActionType;
 
 import java.nio.file.Path;
 import java.time.Clock;
@@ -27,7 +25,8 @@ import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 
 @SpringBootTest

@@ -8,12 +8,16 @@ import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import javafx.scene.layout.BorderPane;
 import org.springframework.stereotype.Component;
+import pl.edu.agh.to2.gui.utils.SpringFXMLLoader;
 import pl.edu.agh.to2.gui.task.BackgroundTask;
 import pl.edu.agh.to2.model.File;
 import pl.edu.agh.to2.service.FileService;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -22,7 +26,7 @@ import java.util.regex.Pattern;
 
 @Component
 public class FileListViewController {
-
+    private final SpringFXMLLoader loader;
     private final FileService fileService;
 
     @FXML
@@ -40,7 +44,8 @@ public class FileListViewController {
 
     private String directoryPath;
 
-    public FileListViewController(FileService fileService) {
+    public FileListViewController(SpringFXMLLoader loader, FileService fileService) {
+        this.loader = loader;
         this.fileService = fileService;
     }
 
@@ -108,6 +113,18 @@ public class FileListViewController {
         executor.shutdown();
     }
 
+    @FXML
+    private void onShowLogsClicked() {
+        var res = loader.load("/fxml/ActionLogListView.fxml");
+        Stage stage = new Stage();
+        stage.setTitle("Action Logs");
+        stage.setScene(res.scene());
+        stage.initModality(Modality.APPLICATION_MODAL);
+        var controller = (ActionLogListViewController) res.controller();
+        controller.show();
+        stage.showAndWait();
+    }
+
     private void updateFileList() {
         runLongRunningTask(() -> {
                     fileService.loadFromPath(directoryPath, Pattern.compile(".*"));
@@ -123,7 +140,7 @@ public class FileListViewController {
         );
     }
 
-    private void updateTable(java.util.List<File> files) {
+    private void updateTable(List<File> files) {
         ObservableList<FileRow> rows = FXCollections.observableArrayList();
         files.forEach(file -> rows.add(new FileRow(file.getPath(), file.getSize() + " bytes")));
         fileTableView.setItems(rows);

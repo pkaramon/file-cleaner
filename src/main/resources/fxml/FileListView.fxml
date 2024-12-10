@@ -16,6 +16,7 @@
                 <Button text="Show All" onAction="#onShowAllClicked"/>
                 <Button text="Largest" onAction="#onLargestClicked"/>
                 <Button text="Delete" onAction="#onDeleteClicked"/>
+                <Button text="Show logs" onAction="#onShowLogsClicked"/>
             </VBox>
         </left>
 
