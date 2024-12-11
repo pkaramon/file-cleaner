@@ -4,14 +4,19 @@ import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.Pane;
 import org.springframework.stereotype.Component;
+import pl.edu.agh.to2.gui.task.TaskExecutor;
+import pl.edu.agh.to2.model.ActionLog;
 import pl.edu.agh.to2.service.ActionLogService;
 
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Component
 public class ActionLogListViewController {
     private final ActionLogService actionLogService;
+    private TaskExecutor taskExecutor;
 
     @FXML
     private TableView<ActionLogRow> tableView;
@@ -21,6 +26,8 @@ public class ActionLogListViewController {
     private TableColumn<ActionLogRow, String> descColumn;
     @FXML
     private TableColumn<ActionLogRow, String> typeColumn;
+    @FXML
+    private Pane rootPane;
 
     public ActionLogListViewController(ActionLogService actionLogService) {
         this.actionLogService = actionLogService;
@@ -32,10 +39,14 @@ public class ActionLogListViewController {
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("date"));
         descColumn.setCellValueFactory(new PropertyValueFactory<>("desc"));
         typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
+        taskExecutor = new TaskExecutor(rootPane);
     }
 
     public void show() {
-        var logs = actionLogService.getLogs();
+        taskExecutor.run(actionLogService::getLogs, this::displayLogs);
+    }
+
+    private void displayLogs(List<ActionLog> logs) {
         tableView.getItems().clear();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 

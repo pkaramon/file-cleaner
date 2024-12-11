@@ -4,31 +4,38 @@
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.BorderPane?>
-<BorderPane xmlns:fx="http://javafx.com/fxml"
-            xmlns="http://javafx.com/javafx"
-            fx:controller="pl.edu.agh.to2.gui.controller.ActionLogListViewController">
+<?import javafx.scene.layout.Pane?>
+<Pane
+        xmlns:fx="http://javafx.com/fxml"
+        xmlns="http://javafx.com/javafx"
+        fx:controller="pl.edu.agh.to2.gui.controller.ActionLogListViewController"
+        fx:id="rootPane"
+>
+    <BorderPane>
+        <center>
+            <TableView fx:id="tableView" style="-fx-padding: 10;">
+                <columns>
+                    <TableColumn text="Date" prefWidth="180" fx:id="dateColumn">
+                        <cellValueFactory>
+                            <PropertyValueFactory property="date"/>
+                        </cellValueFactory>
+                    </TableColumn>
 
-    <center>
-        <TableView fx:id="tableView" style="-fx-padding: 10;">
-            <columns>
-                <TableColumn text="Date" prefWidth="180" fx:id="dateColumn">
-                    <cellValueFactory>
-                        <PropertyValueFactory property="date"/>
-                    </cellValueFactory>
-                </TableColumn>
+                    <TableColumn text="Description" prefWidth="300" fx:id="descColumn">
+                        <cellValueFactory>
+                            <PropertyValueFactory property="desc"/>
+                        </cellValueFactory>
+                    </TableColumn>
 
-                <TableColumn text="Description" prefWidth="300" fx:id="descColumn">
-                    <cellValueFactory>
-                        <PropertyValueFactory property="desc"/>
-                    </cellValueFactory>
-                </TableColumn>
+                    <TableColumn text="Type" prefWidth="300" fx:id="typeColumn">
+                        <cellValueFactory>
+                            <PropertyValueFactory property="type"/>
+                        </cellValueFactory>
+                    </TableColumn>
+                </columns>
+            </TableView>
+        </center>
+    </BorderPane>
+</Pane>
 
-                <TableColumn text="Type" prefWidth="300" fx:id="typeColumn">
-                    <cellValueFactory>
-                        <PropertyValueFactory property="type"/>
-                    </cellValueFactory>
-                </TableColumn>
-            </columns>
-        </TableView>
-    </center>
-</BorderPane>
+

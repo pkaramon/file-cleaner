@@ -3,38 +3,29 @@ package pl.edu.agh.to2.gui.controller;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.scene.layout.BorderPane;
 import org.springframework.stereotype.Component;
+import pl.edu.agh.to2.gui.task.TaskExecutor;
 import pl.edu.agh.to2.gui.utils.SpringFXMLLoader;
-import pl.edu.agh.to2.gui.task.BackgroundTask;
 import pl.edu.agh.to2.model.File;
 import pl.edu.agh.to2.service.FileService;
 
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 @Component
 public class FileListViewController {
     private final SpringFXMLLoader loader;
     private final FileService fileService;
+    private TaskExecutor taskExecutor;
 
     @FXML
-    private BorderPane borderPane;
-
-    @FXML
-    private ProgressIndicator progressIndicator;
-
+    private Pane rootPane;
     @FXML
     private TableView<FileRow> fileTableView;
     @FXML
@@ -54,6 +45,7 @@ public class FileListViewController {
         pathColumn.setCellValueFactory(new PropertyValueFactory<>("path"));
         sizeColumn.setCellValueFactory(new PropertyValueFactory<>("size"));
         fileTableView.getSelectionModel().setSelectionMode(javafx.scene.control.SelectionMode.MULTIPLE);
+        taskExecutor = new TaskExecutor(rootPane);
     }
 
     public void setDirectoryPath(String path) {
@@ -69,7 +61,7 @@ public class FileListViewController {
     @FXML
     private void onLargestClicked() {
         int n = 10;
-        runLongRunningTask(() -> fileService.findLargestFilesIn(directoryPath, n), this::updateTable);
+        taskExecutor.run(() -> fileService.findLargestFilesIn(directoryPath, n), this::updateTable);
     }
 
     @FXML
@@ -78,39 +70,13 @@ public class FileListViewController {
         var selectedRowsCopy = FXCollections.observableArrayList(selectedRows);
 
         if (!selectedRowsCopy.isEmpty()) {
-            runLongRunningTask(() -> {
+            taskExecutor.run(() -> {
                         selectedRowsCopy.forEach(row -> fileService.deleteFile(row.getPath()));
                         return fileService.findFilesInPath(directoryPath);
                     },
                     this::updateTable
             );
         }
-    }
-
-    private <T> void runLongRunningTask(Supplier<T> supplier,
-                                        Consumer<T> onSuccess) {
-        progressIndicator.setVisible(true);
-        borderPane.setVisible(false);
-        progressIndicator.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
-
-        BackgroundTask<T> task = new BackgroundTask<>(supplier);
-        task.setOnSucceeded(event -> {
-            progressIndicator.setVisible(false);
-            borderPane.setVisible(true);
-            onSuccess.accept(task.getValue());
-        });
-        task.setOnFailed(event -> {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Error");
-            alert.setHeaderText("An error occurred");
-            alert.setContentText(task.getException().getMessage());
-            alert.showAndWait();
-            progressIndicator.setVisible(false);
-        });
-
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(task);
-        executor.shutdown();
     }
 
     @FXML
@@ -126,7 +92,7 @@ public class FileListViewController {
     }
 
     private void updateFileList() {
-        runLongRunningTask(() -> {
+        taskExecutor.run(() -> {
                     fileService.loadFromPath(directoryPath, Pattern.compile(".*"));
                     return fileService.findFilesInPath(directoryPath);
                 },
@@ -135,9 +101,7 @@ public class FileListViewController {
     }
 
     private void loadAllFiles() {
-        runLongRunningTask(() -> fileService.findFilesInPath(directoryPath),
-                this::updateTable
-        );
+        taskExecutor.run(() -> fileService.findFilesInPath(directoryPath), this::updateTable);
     }
 
     private void updateTable(List<File> files) {
