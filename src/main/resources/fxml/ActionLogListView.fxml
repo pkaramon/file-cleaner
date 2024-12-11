@@ -4,8 +4,8 @@
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.Pane?>
-<Pane
+<?import javafx.scene.layout.StackPane?>
+<StackPane
         xmlns:fx="http://javafx.com/fxml"
         xmlns="http://javafx.com/javafx"
         fx:controller="pl.edu.agh.to2.gui.controller.ActionLogListViewController"
@@ -36,6 +36,6 @@
             </TableView>
         </center>
     </BorderPane>
-</Pane>
+</StackPane>
 
 

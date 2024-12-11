@@ -3,9 +3,9 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.control.cell.PropertyValueFactory?>
 <?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
-<Pane
+<?import javafx.scene.layout.StackPane?>
+<StackPane
         xmlns:fx="http://javafx.com/fxml"
         xmlns="http://javafx.com/javafx"
         fx:controller="pl.edu.agh.to2.gui.controller.FileListViewController"
@@ -38,4 +38,4 @@
             </TableView>
         </center>
     </BorderPane>
-</Pane>
+</StackPane>

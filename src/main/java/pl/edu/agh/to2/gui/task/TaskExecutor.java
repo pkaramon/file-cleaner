@@ -15,13 +15,12 @@ public class TaskExecutor {
     private final ProgressIndicator progressIndicator;
 
     // WARNING: Does not work with BorderPane
-    // If you need to use BorderPane, surround it with Pane
+    // If you need to use BorderPane, surround it with StackPane
     public TaskExecutor(Pane rootPane) {
         this.rootPane = rootPane;
         this.progressIndicator = new ProgressIndicator();
         this.rootPane.getChildren().add(this.progressIndicator);
     }
-
 
     public <T> void run(Supplier<T> supplier,
                         Consumer<T> onSuccess) {
@@ -49,37 +48,17 @@ public class TaskExecutor {
         executor.shutdown();
     }
 
-
     private void showProgressIndicator() {
         rootPane.getChildren().forEach(node -> node.setVisible(false));
         progressIndicator.setVisible(true);
         progressIndicator.setManaged(true);
         progressIndicator.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
-        centerProgressIndicator();
     }
 
     private void hideProgressIndicator() {
         rootPane.getChildren().forEach(node -> node.setVisible(true));
         progressIndicator.setManaged(false);
         progressIndicator.setVisible(false);
-    }
-
-
-    private void centerProgressIndicator() {
-        progressIndicator
-                .layoutXProperty()
-                .bind(rootPane
-                        .widthProperty()
-                        .subtract(progressIndicator.widthProperty())
-                        .divide(2));
-
-
-        progressIndicator
-                .layoutYProperty()
-                .bind(rootPane
-                        .heightProperty()
-                        .subtract(progressIndicator.heightProperty())
-                        .divide(2));
     }
 
     private <T> void showErrorMessage(Task<T> task) {
