@@ -16,6 +16,9 @@
                 <Button text="Show All" onAction="#onShowAllClicked"/>
                 <Button text="Largest" onAction="#onLargestClicked"/>
                 <Button text="Delete" onAction="#onDeleteClicked"/>
+                <Button text="Find Duplicates" onAction="#onFindDuplicatesClicked"/>
+                <Button text="Delete Duplicates" onAction="#onDeleteDuplicatesClicked"/>
+                <Button text="Archive Duplicates" onAction="#onArchiveDuplicatesClicked"/>
             </VBox>
         </left>
 
