@@ -10,10 +10,18 @@ import pl.edu.agh.to2.types.ActionType;
 import pl.edu.agh.to2.model.File;
 import pl.edu.agh.to2.repository.FileRepository;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Service
 public class FileService {
@@ -76,4 +84,67 @@ public class FileService {
 
         actionLogRepository.save(actionLog);
     }
+
+    public Map<Long, List<File>> findDuplicates() {
+        List<File> allFiles = fileRepository.findAll();
+
+        return allFiles.stream()
+                .collect(Collectors.groupingBy(File::getSize))
+                .entrySet().stream()
+                .filter(entry -> entry.getValue().size() > 1) // Filtrujemy tylko grupy o więcej niż jednym elemencie
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    @Transactional
+    public void deleteDuplicates(Map<Long, List<File>> duplicates) {
+        // Iteracja po grupach duplikatów
+        for (Map.Entry<Long, List<File>> entry : duplicates.entrySet()) {
+            List<File> duplicateFiles = entry.getValue();
+
+            // Usuwamy wszystkie pliki oprócz jednego
+            if (duplicateFiles.size() > 1) {
+                for (int i = 1; i < duplicateFiles.size(); i++) {
+                    File file = duplicateFiles.get(i);
+                    deleteFile(file.getPath());  // Wywołanie metody usuwania pliku
+                }
+            }
+        }
+    }
+    public void archiveDuplicates(Map<Long, List<File>> duplicates, java.io.File selectedDirectory) throws IOException {
+        // Utwórz nazwę pliku ZIP
+        String zipFileName = "duplicates_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".zip";
+        java.io.File zipFile = new java.io.File(selectedDirectory, zipFileName);
+
+        try (FileOutputStream fos = new FileOutputStream(zipFile);
+             ZipOutputStream zipOut = new ZipOutputStream(fos)) {
+
+            // Iteracja po duplikatach
+            for (List<File> duplicateFiles : duplicates.values()) {
+                for (File file : duplicateFiles) {
+                    java.io.File inputFile = new java.io.File(file.getPath()); // Użycie `java.io.File`
+
+                    // Sprawdź, czy plik istnieje
+                    if (inputFile.exists()) {
+                        try (FileInputStream fis = new FileInputStream(inputFile)) {
+                            ZipEntry zipEntry = new ZipEntry(inputFile.getName());
+                            zipOut.putNextEntry(zipEntry);
+
+                            byte[] buffer = new byte[1024];
+                            int length;
+                            while ((length = fis.read(buffer)) >= 0) {
+                                zipOut.write(buffer, 0, length);
+                            }
+
+                            zipOut.closeEntry();
+                        }
+                    } else {
+                        throw new IOException("File not found: " + inputFile.getPath());
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new IOException("Error archiving duplicate files: " + e.getMessage(), e);
+        }
+    }
+
 }
