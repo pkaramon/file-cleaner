@@ -3,19 +3,21 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.control.cell.PropertyValueFactory?>
 <?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.StackPane?>
 <StackPane
         xmlns:fx="http://javafx.com/fxml"
         xmlns="http://javafx.com/javafx"
-        fx:controller="pl.edu.agh.to2.gui.controller.FileListViewController">
-    <ProgressIndicator fx:id="progressIndicator" style="-fx-padding: 10;"/>
-    <BorderPane fx:id="borderPane">
+        fx:controller="pl.edu.agh.to2.gui.controller.FileListViewController"
+        fx:id="rootPane"
+>
+    <BorderPane>
         <left>
             <VBox spacing="10" alignment="CENTER" style="-fx-padding: 10;">
                 <Button text="Show All" onAction="#onShowAllClicked"/>
                 <Button text="Largest" onAction="#onLargestClicked"/>
                 <Button text="Delete" onAction="#onDeleteClicked"/>
+                <Button text="Show logs" onAction="#onShowLogsClicked"/>
                 <Button text="Find Duplicates" onAction="#onFindDuplicatesClicked"/>
                 <Button text="Delete Duplicates" onAction="#onDeleteDuplicatesClicked"/>
                 <Button text="Archive Duplicates" onAction="#onArchiveDuplicatesClicked"/>
