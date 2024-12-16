@@ -1,10 +1,9 @@
 package pl.edu.agh.to2.service;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.regex.Pattern;
 
 public interface FileSystemService {
-    Collection<File> searchDirectory(String path, Pattern pattern);
+    Collection<FileInfo> searchDirectory(String path, Pattern pattern);
     boolean deleteFile(String path);
 }

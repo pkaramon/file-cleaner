@@ -30,15 +30,19 @@ public class File {
     @Column(nullable = false)
     private long lastModified;
 
+    @Column(nullable = false)
+    private String hash;
+
     public File() {
 
     }
 
-    public File(String name, String path, long size, long lastModified) {
+    public File(String name, String path, long size, long lastModified, String hash) {
         this.name = name;
         this.path = path;
         this.size = size;
         this.lastModified = lastModified;
+        this.hash = hash;
     }
 
     public long getId() {
@@ -55,6 +59,10 @@ public class File {
 
     public long getSize() {
         return size;
+    }
+
+    public String getHash() {
+        return hash;
     }
 
     public void setSize(long size) {

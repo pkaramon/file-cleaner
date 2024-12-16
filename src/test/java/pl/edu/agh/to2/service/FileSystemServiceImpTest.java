@@ -3,7 +3,6 @@ package pl.edu.agh.to2.service;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import pl.edu.agh.to2.service.FileSystemServiceImp;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,7 +10,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -45,12 +43,12 @@ class FileSystemServiceImpTest {
         Pattern pattern = Pattern.compile(".*\\.txt$");
 
         // when
-        Collection<File> result = fileSystemService.searchDirectory(tempDir.toString(), pattern);
+        Collection<FileInfo> result = fileSystemService.searchDirectory(tempDir.toString(), pattern);
 
         // then
         assertEquals(2, result.size());
-        assertTrue(result.stream().anyMatch(f -> f.getName().equals("file1.txt")));
-        assertTrue(result.stream().anyMatch(f -> f.getName().equals("file2.txt")));
+        assertTrue(result.stream().anyMatch(f -> f.path().endsWith("file1.txt")));
+        assertTrue(result.stream().anyMatch(f -> f.path().endsWith("file2.txt")));
     }
 
     @Test
@@ -62,7 +60,7 @@ class FileSystemServiceImpTest {
         Pattern pattern = Pattern.compile(".*\\.txt$");
 
         // when
-        List<File> result = (List<File>) fileSystemService.searchDirectory(tempDir.toString(), pattern);
+        Collection<FileInfo> result = fileSystemService.searchDirectory(tempDir.toString(), pattern);
 
         // then
         assertTrue(result.isEmpty());
@@ -82,18 +80,18 @@ class FileSystemServiceImpTest {
         Pattern pattern = Pattern.compile(".*\\.txt$");
 
         // when
-        Collection<File> result = fileSystemService.searchDirectory(tempDir.toString(), pattern);
+        Collection<FileInfo> result = fileSystemService.searchDirectory(tempDir.toString(), pattern);
 
         // then
         assertEquals(3, result.size());
-        assertTrue(result.stream().anyMatch(f -> f.getName().equals("file1.txt")));
-        assertTrue(result.stream().anyMatch(f -> f.getName().equals("file2.txt")));
-        assertTrue(result.stream().anyMatch(f -> f.getName().equals("file3.txt")));
+        assertTrue(result.stream().anyMatch(f -> f.path().endsWith("file1.txt")));
+        assertTrue(result.stream().anyMatch(f -> f.path().endsWith("file2.txt")));
+        assertTrue(result.stream().anyMatch(f -> f.path().endsWith("file3.txt")));
     }
 
     @Test
     void testSearchDirectoryWithNonExistentDirectory() {
-        Collection<File> result = fileSystemService.searchDirectory("nonExistentDir", null);
+        Collection<FileInfo> result = fileSystemService.searchDirectory("nonExistentDir", null);
 
         assertTrue(result.isEmpty());
     }

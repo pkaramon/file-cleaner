@@ -15,8 +15,8 @@ public class FileSystemServiceImp implements FileSystemService {
     private static final Logger logger = LoggerFactory.getLogger(FileSystemServiceImp.class);
 
     @Override
-    public Collection<File> searchDirectory(String path, Pattern pattern) {
-        List<File> fileList = new LinkedList<>();
+    public Collection<FileInfo> searchDirectory(String path, Pattern pattern) {
+        List<FileInfo> fileList = new LinkedList<>();
         File dir = new File(path);
         if (!dir.exists() || !dir.isDirectory()) {
             logger.info("Invalid folder path provided.");
@@ -27,7 +27,7 @@ public class FileSystemServiceImp implements FileSystemService {
         return fileList;
     }
 
-    private void search(List<File> fileList, File dir, Pattern pattern) {
+    private void search(List<FileInfo> fileList, File dir, Pattern pattern) {
         File[] filesList = dir.listFiles();
         if (filesList == null) {
             return;
@@ -38,7 +38,7 @@ public class FileSystemServiceImp implements FileSystemService {
             } else {
                 if (pattern == null || pattern.matcher(file.getName()).matches()) {
                     logger.info("File path: {}", file.getName());
-                    fileList.add(file);
+                    fileList.add(new FileInfo(file.getPath(), file.length(), file.lastModified()));
                 }
             }
         }
@@ -54,6 +54,4 @@ public class FileSystemServiceImp implements FileSystemService {
             return false;
         }
     }
-
-
 }

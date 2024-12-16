@@ -5,14 +5,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import pl.edu.agh.to2.model.ActionLog;
-import pl.edu.agh.to2.repository.ActionLogRepository;
-import pl.edu.agh.to2.types.ActionType;
 import pl.edu.agh.to2.model.File;
+import pl.edu.agh.to2.repository.ActionLogRepository;
 import pl.edu.agh.to2.repository.FileRepository;
+import pl.edu.agh.to2.types.ActionType;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -30,15 +31,19 @@ public class FileService {
     private final FileSystemService fileSystemService;
     private final Clock clock;
     private final ActionLogRepository actionLogRepository;
+    private final FileHasher fileHasher;
 
 
     public FileService(FileRepository fileRepository,
                        FileSystemService fileSystemService,
-                       Clock clock, ActionLogRepository actionLogRepository) {
+                       Clock clock,
+                       ActionLogRepository actionLogRepository,
+                       FileHasher fileHasher) {
         this.fileRepository = fileRepository;
         this.fileSystemService = fileSystemService;
         this.clock = clock;
         this.actionLogRepository = actionLogRepository;
+        this.fileHasher = fileHasher;
     }
 
 
@@ -53,7 +58,12 @@ public class FileService {
         var files = fileSystemService.searchDirectory(path, pattern);
 
         var fileRecords = files.stream()
-                .map(f -> new File(f.getName(), f.getPath(), f.length(), f.lastModified()))
+                .map(f -> new File(
+                        Path.of(f.path()).getFileName().toString(),
+                        f.path(),
+                        f.size(),
+                        f.lastModified(),
+                        tryToHash(f.path())))
                 .toList();
 
         fileRepository.saveAll(fileRecords);
@@ -61,6 +71,14 @@ public class FileService {
         logger.info("Files loaded from path: {}. Number of files: {}", path, fileRecords.size());
     }
 
+    private String tryToHash(String path) {
+        try {
+            return fileHasher.hash(path);
+        } catch (IOException e) {
+            logger.error("Error hashing file: {}", path, e);
+            throw new RuntimeException("Error hashing file: " + path, e);
+        }
+    }
 
     public List<File> findFilesInPath(String directoryPath) {
         return fileRepository.findByPathStartingWith(directoryPath);
@@ -69,6 +87,7 @@ public class FileService {
     public List<File> findLargestFilesIn(String path, int n) {
         return fileRepository.findLargestFilesIn(path, n);
     }
+
     @Transactional
     public void deleteFile(String path) {
         fileSystemService.deleteFile(path);
@@ -110,6 +129,7 @@ public class FileService {
             }
         }
     }
+
     public void archiveDuplicates(Map<Long, List<File>> duplicates, java.io.File selectedDirectory) throws IOException {
         // Utwórz nazwę pliku ZIP
         String zipFileName = "duplicates_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".zip";
