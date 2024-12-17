@@ -6,4 +6,16 @@ services:
     volumes:
       - ./pgdata:/var/lib/postgresql/data
     ports:
-        - "5432:5432"
+      - "5432:5432"
+  test-db:
+    image: postgres:latest
+    container_name: test_db
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: test_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./pgdata-test:/var/lib/postgresql/data
+

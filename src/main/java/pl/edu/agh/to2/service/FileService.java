@@ -7,18 +7,17 @@ import org.springframework.stereotype.Service;
 import pl.edu.agh.to2.model.ActionLog;
 import pl.edu.agh.to2.model.File;
 import pl.edu.agh.to2.repository.ActionLogRepository;
+import pl.edu.agh.to2.repository.EditDistanceResult;
 import pl.edu.agh.to2.repository.FileRepository;
 import pl.edu.agh.to2.types.ActionType;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -49,15 +48,12 @@ public class FileService {
 
     @Transactional
     public void loadFromPath(String path, Pattern pattern) {
-        // NOTE: Creating a new database from the files in the directory
-        // is cheap for now, because we are only storing basic information about the files.
-        // We may want to consider a more efficient way of doing this if
-        // some metadata is expensive to compute.
         fileRepository.deleteAll();
         fileRepository.flush();
-        var files = fileSystemService.searchDirectory(path, pattern);
 
-        var fileRecords = files.stream()
+        Collection<FileInfo> files = fileSystemService.searchDirectory(path, pattern);
+
+        List<File> fileRecords = files.stream()
                 .map(f -> new File(
                         Path.of(f.path()).getFileName().toString(),
                         f.path(),
@@ -88,9 +84,22 @@ public class FileService {
         return fileRepository.findLargestFilesIn(path, n);
     }
 
+
+    public List<List<File>> findDuplicatedGroups() {
+        List<File> duplicates = fileRepository.findDuplicates();
+        return new ArrayList<>(duplicates.stream()
+                .collect(Collectors.groupingBy(f -> f.getHash() + "_" + f.getSize()))
+                .values());
+    }
+
     @Transactional
     public void deleteFile(String path) {
-        fileSystemService.deleteFile(path);
+        try {
+            fileSystemService.deleteFile(path);
+        } catch (IOException e) {
+            logger.error("Error deleting file: {}", path, e);
+            return;
+        }
         fileRepository.deleteByPath(path);
 
         logger.info("File deleted: {}", path);
@@ -102,16 +111,6 @@ public class FileService {
         );
 
         actionLogRepository.save(actionLog);
-    }
-
-    public Map<Long, List<File>> findDuplicates() {
-        List<File> allFiles = fileRepository.findAll();
-
-        return allFiles.stream()
-                .collect(Collectors.groupingBy(File::getSize))
-                .entrySet().stream()
-                .filter(entry -> entry.getValue().size() > 1) // Filtrujemy tylko grupy o więcej niż jednym elemencie
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     @Transactional
@@ -130,41 +129,60 @@ public class FileService {
         }
     }
 
-    public void archiveDuplicates(Map<Long, List<File>> duplicates, java.io.File selectedDirectory) throws IOException {
-        // Utwórz nazwę pliku ZIP
-        String zipFileName = "duplicates_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".zip";
-        java.io.File zipFile = new java.io.File(selectedDirectory, zipFileName);
+    public void archiveFiles(List<File> files, String zipFilePath) throws IOException {
+        try (OutputStream outStream = fileSystemService.openFileForWrite(zipFilePath);
+             ZipOutputStream zipOut = new ZipOutputStream(outStream)) {
+            for (File file : files) {
+                String entryName = file.getName();
+                try (InputStream in = fileSystemService.openFileForRead(file.getPath())) {
+                    ZipEntry zipEntry = new ZipEntry(entryName);
+                    zipOut.putNextEntry(zipEntry);
 
-        try (FileOutputStream fos = new FileOutputStream(zipFile);
-             ZipOutputStream zipOut = new ZipOutputStream(fos)) {
-
-            // Iteracja po duplikatach
-            for (List<File> duplicateFiles : duplicates.values()) {
-                for (File file : duplicateFiles) {
-                    java.io.File inputFile = new java.io.File(file.getPath()); // Użycie `java.io.File`
-
-                    // Sprawdź, czy plik istnieje
-                    if (inputFile.exists()) {
-                        try (FileInputStream fis = new FileInputStream(inputFile)) {
-                            ZipEntry zipEntry = new ZipEntry(inputFile.getName());
-                            zipOut.putNextEntry(zipEntry);
-
-                            byte[] buffer = new byte[1024];
-                            int length;
-                            while ((length = fis.read(buffer)) >= 0) {
-                                zipOut.write(buffer, 0, length);
-                            }
-
-                            zipOut.closeEntry();
-                        }
-                    } else {
-                        throw new IOException("File not found: " + inputFile.getPath());
+                    byte[] buffer = new byte[1024];
+                    int length;
+                    while ((length = in.read(buffer)) != -1) {
+                        zipOut.write(buffer, 0, length);
                     }
+
+                    zipOut.closeEntry();
+                } catch (IOException e) {
+                    logger.error("Failed to archive file: {}", file.getPath());
+                    e.printStackTrace();
                 }
             }
         } catch (IOException e) {
-            throw new IOException("Error archiving duplicate files: " + e.getMessage(), e);
+            logger.error("Error creating ZIP file at: {}", zipFilePath);
+            throw e;
         }
     }
 
+    public List<Set<File>> findVersions(int maxDistance) {
+        List<EditDistanceResult> similarFiles = fileRepository.findSimilarFileNames(maxDistance);
+        List<Set<File>> versionGroups = new ArrayList<>();
+
+        // Process the results to group files by similarity
+        for (EditDistanceResult res : similarFiles) {
+            File first = res.first();
+            File second = res.second();
+
+            boolean addedToGroup = false;
+            for (Set<File> group : versionGroups) {
+                if (group.contains(first) || group.contains(second)) {
+                    group.add(first);
+                    group.add(second);
+                    addedToGroup = true;
+                    break;
+                }
+            }
+
+            if (!addedToGroup) {
+                Set<File> newGroup = new HashSet<>();
+                newGroup.add(first);
+                newGroup.add(second);
+                versionGroups.add(newGroup);
+            }
+        }
+
+        return versionGroups;
+    }
 }

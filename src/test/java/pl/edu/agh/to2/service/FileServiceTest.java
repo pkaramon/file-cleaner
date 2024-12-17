@@ -6,31 +6,37 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 import pl.edu.agh.to2.model.File;
 import pl.edu.agh.to2.repository.ActionLogRepository;
 import pl.edu.agh.to2.repository.FileRepository;
 import pl.edu.agh.to2.types.ActionType;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 
 @SpringBootTest
-@AutoConfigureTestDatabase
+@ActiveProfiles("test")
 @Transactional
 class FileServiceTest {
     private static final Pattern defaultPattern = Pattern.compile(".*");
+
     @Autowired
     @InjectMocks
     private FileService fileService;
@@ -178,13 +184,12 @@ class FileServiceTest {
     }
 
     @Test
-    void testDeleteFile() {
+    void testDeleteFile() throws IOException {
         // given
         var a = exampleFileInfo("Docs/a.txt", 100, 100);
         when(fileSystemService.searchDirectory("Docs/", defaultPattern)).thenReturn(List.of(a));
         fileService.loadFromPath("Docs/", defaultPattern);
 
-        when(fileSystemService.deleteFile("Docs/a.txt")).thenReturn(true);
         when(clock.instant()).thenReturn(Instant.parse("2024-01-01T07:00:00Z"));
         when(clock.getZone()).thenReturn(ZoneId.of("UCT"));
 
@@ -203,4 +208,108 @@ class FileServiceTest {
                 .toLocalDateTime();
         assertEquals(expectedDateTime, log.getTimestamp());
     }
+
+    @Test
+    void testGetDuplicates_SameHashesSameSize_ReturnsDuplicates() {
+        // given
+        var a = exampleFileInfo("Docs/a.txt", 100, 100);
+        var b = exampleFileInfo("Docs/b.txt", 200, 100);
+        var c = exampleFileInfo("Docs/c.txt", 100, 100);
+        var d = exampleFileInfo("Docs/d.txt", 100, 100);
+        var e = exampleFileInfo("Docs/e.txt", 200, 100);
+        var f = exampleFileInfo("Docs/f.txt", 200, 100);
+
+        when(fileSystemService.searchDirectory("Docs/", defaultPattern)).thenReturn(List.of(a, b, c, d, e, f));
+        setupFileHashes(List.of(a, b, c, d, e, f),
+                List.of("1", "2", "1", "1", "2", "3"));
+        fileService.loadFromPath("Docs/", defaultPattern);
+
+        // when
+        List<List<File>> duplicates = fileService.findDuplicatedGroups();
+        List<List<String>> fileNames = duplicates.stream().map(inner -> inner.stream().map(File::getName).toList()).toList();
+
+        // then
+        assertEquals(2, duplicates.size());
+        assertTrue(fileNames.contains(List.of("a.txt", "c.txt", "d.txt")));
+        assertTrue(fileNames.contains(List.of("b.txt", "e.txt")));
+    }
+
+    @Test
+    void testArchiveFiles() throws IOException {
+        // Given
+        var a = exampleFileInfo("Docs/a.txt", 100, 100);
+        var b = exampleFileInfo("Docs/b.txt", 200, 100);
+        var c = exampleFileInfo("Docs/c.txt", 300, 100);
+
+        when(fileSystemService.searchDirectory("Docs/", defaultPattern)).thenReturn(List.of(a, b, c));
+        fileService.loadFromPath("Docs/", defaultPattern);
+
+        List<File> docsFiles = fileService.findFilesInPath("Docs/");
+        String zipPath = "Docs/test.zip";
+
+        when(fileSystemService.openFileForRead("Docs/a.txt"))
+                .thenReturn(new ByteArrayInputStream("a".getBytes()));
+        when(fileSystemService.openFileForRead("Docs/b.txt"))
+                .thenReturn(new ByteArrayInputStream("b".getBytes()));
+        when(fileSystemService.openFileForRead("Docs/c.txt"))
+                .thenReturn(new ByteArrayInputStream("c".getBytes()));
+
+        // Use ByteArrayOutputStream to simulate the ZIP file output
+        ByteArrayOutputStream zipFileOutputStream = new ByteArrayOutputStream();
+        when(fileSystemService.openFileForWrite(zipPath)).thenReturn(zipFileOutputStream);
+
+        // When
+        fileService.archiveFiles(docsFiles, zipPath);
+
+        // Then
+        ByteArrayInputStream zipInputStream = new ByteArrayInputStream(zipFileOutputStream.toByteArray());
+        try (ZipInputStream zipIn = new ZipInputStream(zipInputStream)) {
+            ZipEntry entry;
+            int fileCount = 0;
+
+            while ((entry = zipIn.getNextEntry()) != null) {
+                fileCount++;
+                switch (entry.getName()) {
+                    case "a.txt" -> assertEquals("a", new String(zipIn.readAllBytes()));
+                    case "b.txt" -> assertEquals("b", new String(zipIn.readAllBytes()));
+                    case "c.txt" -> assertEquals("c", new String(zipIn.readAllBytes()));
+                    default -> fail("Unexpected file in ZIP: " + entry.getName());
+                }
+                zipIn.closeEntry();
+            }
+
+            assertEquals(3, fileCount, "Incorrect number of files in the ZIP archive.");
+        }
+    }
+
+    @Test
+    void testFindVersions_FindsFilesWhoseNamesAreWithinPassedEditDistance() {
+        // given
+        var v1 = exampleFileInfo("Docs/ver1.txt");
+        var v2 = exampleFileInfo("Docs/ver2.txt");
+        var v3 = exampleFileInfo("Docs/ver3.txt");
+        var v10 = exampleFileInfo("Docs/ver10.txt");
+        var v_9 = exampleFileInfo("Docs/ver_9.txt");
+        var hello = exampleFileInfo("Docs/hello.txt");
+        var hello2 = exampleFileInfo("Docs/hello2.txt");
+        var world = exampleFileInfo("Docs/world.txt");
+
+        when(fileSystemService.searchDirectory("Docs/", defaultPattern))
+                .thenReturn(List.of(v1, v2, v3, v10, v_9, hello, hello2, world));
+        fileService.loadFromPath("Docs/", defaultPattern);
+
+        // when
+        List<Set<File>> versions = fileService.findVersions(3);
+
+        // then
+        assertEquals(2, versions.size());
+        System.out.println(versions.stream().map(inner -> inner.stream().map(File::getName).toList()).toList());
+        List<Set<String>> versionFileNames = versions.stream()
+                .map(inner -> inner.stream().map(File::getName).collect(Collectors.toSet()))
+                .toList();
+
+        assertTrue(versionFileNames.contains(Set.of("ver1.txt", "ver2.txt", "ver3.txt", "ver10.txt", "ver_9.txt")));
+        assertTrue(versionFileNames.contains(Set.of("hello.txt", "hello2.txt")));
+    }
+
 }

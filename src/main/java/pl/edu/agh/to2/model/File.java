@@ -87,7 +87,8 @@ public class File {
                 getSize() == file.getSize() &&
                 getLastModified() == file.getLastModified()
                 && Objects.equals(getName(), file.getName())
-                && Objects.equals(getPath(), file.getPath());
+                && Objects.equals(getPath(), file.getPath())
+                && Objects.equals(getHash(), file.getHash());
     }
 
     @Override
@@ -97,7 +98,8 @@ public class File {
                 getName(),
                 getPath(),
                 getSize(),
-                getLastModified()
+                getLastModified(),
+                getHash()
         );
     }
 }

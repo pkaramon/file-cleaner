@@ -3,8 +3,8 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.control.cell.PropertyValueFactory?>
 <?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
 <StackPane
         xmlns:fx="http://javafx.com/fxml"
         xmlns="http://javafx.com/javafx"
@@ -35,6 +35,12 @@
                     <TableColumn text="Size" prefWidth="180" fx:id="sizeColumn">
                         <cellValueFactory>
                             <PropertyValueFactory property="size"/>
+                        </cellValueFactory>
+                    </TableColumn>
+
+                    <TableColumn text="Hash" prefWidth="180" fx:id="hashColumn">
+                        <cellValueFactory>
+                            <PropertyValueFactory property="hash"/>
                         </cellValueFactory>
                     </TableColumn>
                 </columns>

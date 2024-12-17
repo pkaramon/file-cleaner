@@ -95,4 +95,45 @@ class FileSystemServiceImpTest {
 
         assertTrue(result.isEmpty());
     }
+
+    @Test
+    void deleteFile() throws IOException {
+        // given
+        Path file = Files.createFile(tempDir.resolve("file.txt"));
+
+        // when
+        fileSystemService.deleteFile(file.toString());
+
+        // then
+        assertTrue(Files.notExists(file));
+    }
+
+    @Test
+    void openFileForWrite() throws IOException {
+        // given
+        Path file = tempDir.resolve("file.txt");
+
+        // when
+        try (var out = fileSystemService.openFileForWrite(file.toString())) {
+            out.write("Hello, World!".getBytes());
+        }
+
+        // then
+        assertTrue(Files.exists(file));
+        assertEquals("Hello, World!", Files.readString(file));
+    }
+
+    @Test
+    void openFileForRead() throws IOException {
+        // given
+        Path file = Files.createFile(tempDir.resolve("file.txt"));
+        Files.writeString(file, "Hello, World!");
+
+        // when
+        try (var in = fileSystemService.openFileForRead(file.toString())) {
+            byte[] bytes = in.readAllBytes();
+            String content = new String(bytes);
+            assertEquals("Hello, World!", content);
+        }
+    }
 }

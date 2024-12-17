@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
+import java.io.*;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -45,13 +45,20 @@ public class FileSystemServiceImp implements FileSystemService {
     }
 
     @Override
-    public boolean deleteFile(String path) {
+    public void deleteFile(String path) throws IOException {
         File file = new File(path);
-        try {
-            return file.delete();
-        } catch (Exception e) {
-            logger.info("Error occurred while deleting file: {}", e.getMessage());
-            return false;
+        if (!file.delete()) {
+            throw new IOException("Failed to delete file: " + path);
         }
+    }
+
+    @Override
+    public OutputStream openFileForWrite(String path) throws IOException {
+        return new FileOutputStream(path);
+    }
+
+    @Override
+    public InputStream openFileForRead(String path) throws IOException {
+        return new FileInputStream(path);
     }
 }
