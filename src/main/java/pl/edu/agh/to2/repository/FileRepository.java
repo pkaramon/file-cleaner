@@ -30,14 +30,15 @@ public interface FileRepository extends JpaRepository<File, Long> {
 
 
     @Query("SELECT f FROM File f WHERE (f.hash, f.size) in " +
-            "(SELECT f.hash, f.size FROM File f GROUP BY f.hash, f.size HAVING COUNT(f) > 1)")
+            "(SELECT f.hash, f.size FROM File f GROUP BY f.hash, f.size HAVING COUNT(f) > 1) " +
+            "ORDER BY f.id" )
     List<File> findDuplicates();
 
     @Query("SELECT levenshtein(f.name, g.name), f, g " +
             "FROM File f " +
             "INNER JOIN File g ON f.id < g.id " +
             "WHERE levenshtein(f.name, g.name) < :maxDistance " +
-            "ORDER BY levenshtein(f.name, g.name)")
+            "ORDER BY levenshtein(f.name, g.name), f.id, g.id")
     List<Object[]> _findSimilarFilesWithLevenshtein(@Param("maxDistance") int maxDistance);
 
 

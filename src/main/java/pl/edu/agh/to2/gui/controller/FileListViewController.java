@@ -3,9 +3,10 @@ package pl.edu.agh.to2.gui.controller;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
@@ -17,6 +18,7 @@ import pl.edu.agh.to2.model.File;
 import pl.edu.agh.to2.service.FileService;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 @Component
@@ -43,12 +45,13 @@ public class FileListViewController {
         this.fileService = fileService;
     }
 
+
     @FXML
     public void initialize() {
         pathColumn.setCellValueFactory(new PropertyValueFactory<>("path"));
         sizeColumn.setCellValueFactory(new PropertyValueFactory<>("size"));
         hashColumn.setCellValueFactory(new PropertyValueFactory<>("hash"));
-        fileTableView.getSelectionModel().setSelectionMode(javafx.scene.control.SelectionMode.MULTIPLE);
+        fileTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         taskExecutor = new TaskExecutor(rootPane);
     }
 
@@ -85,98 +88,50 @@ public class FileListViewController {
 
     @FXML
     public void onFindDuplicatesClicked() {
-        List<List<File>> duplicates = fileService.findDuplicatedGroups();
-
-        if (duplicates.isEmpty()) {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("No Duplicates");
-            alert.setHeaderText("No Duplicates Found");
-            alert.setContentText("No duplicate files were found.");
-            alert.showAndWait();
-        } else {
-            List<File> duplicateFiles = duplicates.stream()
-                    .flatMap(List::stream)
-                    .toList();
-            updateTable(duplicateFiles);
-        }
+        var res = loader.load("/fxml/GroupFilesView.fxml");
+        Stage stage = new Stage();
+        stage.setTitle("Duplicated Files");
+        stage.setScene(res.scene());
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setMinHeight(720);
+        stage.setMinWidth(1280);
+        var controller = (GroupFilesViewController) res.controller();
+        controller.show(FileService::findDuplicatedGroups);
+        stage.showAndWait();
     }
 
     @FXML
-    public void onDeleteDuplicatesClicked() {
-//        // Znajdź duplikaty
-        List<List<File>> duplicates = fileService.findDuplicatedGroups();
-
-        if (duplicates.isEmpty()) {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("No Duplicates");
-            alert.setHeaderText("No Duplicates Found");
-            alert.setContentText("No duplicate files were found.");
-            alert.showAndWait();
-        } else {
-//            // Jeśli duplikaty zostały znalezione, wywołaj metodę do ich usunięcia
-//            fileService.deleteDuplicates(duplicates);
-//
-//            // Wyświetl komunikat o zakończeniu operacji
-//            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-//            alert.setTitle("Duplicates Deleted");
-//            alert.setHeaderText("Duplicates Removed");
-//            alert.setContentText("Duplicate files have been deleted.");
-//            alert.showAndWait();
-//
-//            // Odśwież widok, jeśli to potrzebne
-//            onFindDuplicatesClicked(); // Ponowne wywołanie, by zaktualizować widok
-        }
+    private void onFindVersionsClicked() {
+        var res = loader.load("/fxml/GroupFilesView.fxml");
+        Stage stage = new Stage();
+        stage.setTitle("Versioned Files");
+        stage.setScene(res.scene());
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setMinHeight(720);
+        stage.setMinWidth(1280);
+        var controller = (GroupFilesViewController) res.controller();
+        int maxDistance = askUserForMaxDistance();
+        controller.show(fs -> fs.findVersions(maxDistance));
+        stage.showAndWait();
     }
 
-    @FXML
-    public void onArchiveDuplicatesClicked() {
-//        // Znajdź duplikaty
-//        Map<Long, List<File>> duplicates = fileService.findDuplicatedGroups();
-//
-//        if (duplicates.isEmpty()) {
-//            // Jeśli brak duplikatów
-//            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-//            alert.setTitle("No Duplicates");
-//            alert.setHeaderText("No Duplicates Found");
-//            alert.setContentText("No duplicate files were found.");
-//            alert.showAndWait();
-//        } else {
-//            // Użyj DirectoryChooser, aby wybrać katalog docelowy
-//            DirectoryChooser directoryChooser = new DirectoryChooser();
-//            directoryChooser.setTitle("Select Directory for Archive");
-//            java.io.File selectedDirectory = directoryChooser.showDialog(null);
-//
-//            if (selectedDirectory != null) {
-//                try {
-//                    // Wywołaj metodę archiwizującą
-//                    fileService.archiveDuplicates(duplicates, selectedDirectory);
-//
-//                    // Wyświetl komunikat o sukcesie
-//                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-//                    alert.setTitle("Duplicates Archived");
-//                    alert.setHeaderText("Duplicates Archived Successfully");
-//                    alert.setContentText("Duplicate files have been archived to: " + selectedDirectory.getAbsolutePath());
-//                    alert.showAndWait();
-//
-//                    // Odśwież widok, jeśli to potrzebne
-//                    onFindDuplicatesClicked(); // Zaktualizuj widok po operacji
-//                } catch (IOException e) {
-//                    // Obsłuż błędy związane z archiwizacją
-//                    Alert alert = new Alert(Alert.AlertType.ERROR);
-//                    alert.setTitle("Error");
-//                    alert.setHeaderText("Error Archiving Files");
-//                    alert.setContentText("An error occurred while archiving the files: " + e.getMessage());
-//                    alert.showAndWait();
-//                }
-//            } else {
-//                // Użytkownik anulował wybór katalogu
-//                Alert alert = new Alert(Alert.AlertType.WARNING);
-//                alert.setTitle("No Directory Selected");
-//                alert.setHeaderText("No Directory Selected");
-//                alert.setContentText("Please select a directory to save the archive.");
-//                alert.showAndWait();
-//            }
-//        }
+    private int askUserForMaxDistance() {
+        Optional<Integer> result = Optional.empty();
+        while (result.isEmpty()) {
+            TextInputDialog dialog = new TextInputDialog("3");
+            dialog.setTitle("Select max edit distance");
+            dialog.setContentText("Please enter a max distance:");
+
+            result = dialog.showAndWait().flatMap(s -> {
+                        try {
+                            return Optional.of(Integer.parseInt(s));
+                        } catch (NumberFormatException e) {
+                            return Optional.empty();
+                        }
+                    }
+            );
+        }
+        return result.get();
     }
 
     @FXML
@@ -205,33 +160,11 @@ public class FileListViewController {
     }
 
     private void updateTable(List<File> files) {
-        ObservableList<FileRow> rows = FXCollections.observableArrayList();
-        files.forEach(file -> rows.add(new FileRow(file.getPath(), file.getSize() + " bytes", file.getHash())));
+        ObservableList<FileRow> rows = FXCollections.observableArrayList(
+                files.stream().map(FileRow::new).toList()
+        );
         fileTableView.setItems(rows);
     }
 
 
-    public static class FileRow {
-        private final String path;
-        private final String size;
-        private final String hash;
-
-        public FileRow(String path, String size, String hash) {
-            this.path = path;
-            this.size = size;
-            this.hash = hash;
-        }
-
-        public String getPath() {
-            return path;
-        }
-
-        public String getSize() {
-            return size;
-        }
-
-        public String getHash() {
-            return hash;
-        }
-    }
 }

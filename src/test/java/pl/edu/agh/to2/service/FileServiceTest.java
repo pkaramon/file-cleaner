@@ -63,6 +63,8 @@ class FileServiceTest {
         actionLogRepository.deleteAll();
 
         when(fileHasher.hash(Mockito.any())).thenReturn("hash");
+        when(clock.instant()).thenReturn(Instant.now());
+        when(clock.getZone()).thenReturn(ZoneId.systemDefault());
     }
 
     void addSampleDataToDatabase() {
@@ -236,7 +238,7 @@ class FileServiceTest {
 
     @Test
     void testArchiveFiles() throws IOException {
-        // Given
+        // given
         var a = exampleFileInfo("Docs/a.txt", 100, 100);
         var b = exampleFileInfo("Docs/b.txt", 200, 100);
         var c = exampleFileInfo("Docs/c.txt", 300, 100);
@@ -254,14 +256,13 @@ class FileServiceTest {
         when(fileSystemService.openFileForRead("Docs/c.txt"))
                 .thenReturn(new ByteArrayInputStream("c".getBytes()));
 
-        // Use ByteArrayOutputStream to simulate the ZIP file output
         ByteArrayOutputStream zipFileOutputStream = new ByteArrayOutputStream();
         when(fileSystemService.openFileForWrite(zipPath)).thenReturn(zipFileOutputStream);
 
-        // When
+        // when
         fileService.archiveFiles(docsFiles, zipPath);
 
-        // Then
+        // then
         ByteArrayInputStream zipInputStream = new ByteArrayInputStream(zipFileOutputStream.toByteArray());
         try (ZipInputStream zipIn = new ZipInputStream(zipInputStream)) {
             ZipEntry entry;
@@ -283,6 +284,30 @@ class FileServiceTest {
     }
 
     @Test
+    void testArchivesFiles_AddsActionLog() throws IOException {
+        // given
+        var a = exampleFileInfo("Docs/a.txt", 100, 100);
+        when(fileSystemService.searchDirectory("Docs/", defaultPattern)).thenReturn(List.of(a));
+        fileService.loadFromPath("Docs/", defaultPattern);
+
+        var fileA = fileRepository.findByPath("Docs/a.txt").get();
+
+        String zipPath = "Docs/test.zip";
+        ByteArrayOutputStream zipFileOutputStream = new ByteArrayOutputStream();
+        when(fileSystemService.openFileForWrite(zipPath)).thenReturn(zipFileOutputStream);
+        when(fileSystemService.openFileForRead("Docs/a.txt"))
+                .thenReturn(new ByteArrayInputStream("a".getBytes()));
+
+        // when
+        fileService.archiveFiles(List.of(fileA), zipPath);
+
+        // then
+        var log = actionLogRepository.findAll().get(0);
+        assertEquals("Files archived to: Docs/test.zip", log.getDescription());
+        assertEquals(ActionType.ARCHIVE, log.getActionType());
+    }
+
+    @Test
     void testFindVersions_FindsFilesWhoseNamesAreWithinPassedEditDistance() {
         // given
         var v1 = exampleFileInfo("Docs/ver1.txt");
@@ -299,7 +324,7 @@ class FileServiceTest {
         fileService.loadFromPath("Docs/", defaultPattern);
 
         // when
-        List<Set<File>> versions = fileService.findVersions(3);
+        List<List<File>> versions = fileService.findVersions(3);
 
         // then
         assertEquals(2, versions.size());

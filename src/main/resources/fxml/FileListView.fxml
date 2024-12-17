@@ -19,8 +19,7 @@
                 <Button text="Delete" onAction="#onDeleteClicked"/>
                 <Button text="Show logs" onAction="#onShowLogsClicked"/>
                 <Button text="Find Duplicates" onAction="#onFindDuplicatesClicked"/>
-                <Button text="Delete Duplicates" onAction="#onDeleteDuplicatesClicked"/>
-                <Button text="Archive Duplicates" onAction="#onArchiveDuplicatesClicked"/>
+                <Button text="Find versions" onAction="#onFindVersionsClicked"/>
             </VBox>
         </left>
 

@@ -49,8 +49,8 @@ public class MainViewController {
 
 
         Stage stage = (Stage) pathInput.getScene().getWindow();
-        stage.setMinHeight(400);
-        stage.setMinWidth(600);
+        stage.setMinHeight(720);
+        stage.setMinWidth(1280);
         stage.setScene(scene);
     }
 

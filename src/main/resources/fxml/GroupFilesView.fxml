@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.control.ScrollPane?>
+<StackPane
+        xmlns:fx="http://javafx.com/fxml"
+        xmlns="http://javafx.com/javafx"
+        fx:controller="pl.edu.agh.to2.gui.controller.GroupFilesViewController"
+        fx:id="rootPane">
+    <ScrollPane fx:id="scrollPane"/>
+</StackPane>
+
+

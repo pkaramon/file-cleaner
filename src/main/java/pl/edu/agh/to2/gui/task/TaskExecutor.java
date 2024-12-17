@@ -8,12 +8,10 @@ import javafx.scene.layout.Pane;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public class TaskExecutor {
     private final Pane rootPane;
     private final ProgressIndicator progressIndicator;
-
     // WARNING: Does not work with BorderPane
     // If you need to use BorderPane, surround it with StackPane
     public TaskExecutor(Pane rootPane) {
@@ -22,13 +20,13 @@ public class TaskExecutor {
         this.rootPane.getChildren().add(this.progressIndicator);
     }
 
-    public <T> void run(Supplier<T> supplier,
+    public <T> void run(ThrowingSupplier<T> supplier,
                         Consumer<T> onSuccess) {
         showProgressIndicator();
 
         Task<T> task = new Task<>() {
             @Override
-            protected T call() {
+            protected T call() throws Exception {
                 return supplier.get();
             }
         };
@@ -68,4 +66,10 @@ public class TaskExecutor {
         alert.setContentText(task.getException().getMessage());
         alert.showAndWait();
     }
+
+    @FunctionalInterface
+    public interface ThrowingSupplier<T> {
+        T get() throws Exception;
+    }
+
 }

@@ -129,38 +129,49 @@ public class FileService {
         }
     }
 
+    @Transactional
     public void archiveFiles(List<File> files, String zipFilePath) throws IOException {
         try (OutputStream outStream = fileSystemService.openFileForWrite(zipFilePath);
              ZipOutputStream zipOut = new ZipOutputStream(outStream)) {
             for (File file : files) {
-                String entryName = file.getName();
-                try (InputStream in = fileSystemService.openFileForRead(file.getPath())) {
-                    ZipEntry zipEntry = new ZipEntry(entryName);
-                    zipOut.putNextEntry(zipEntry);
-
-                    byte[] buffer = new byte[1024];
-                    int length;
-                    while ((length = in.read(buffer)) != -1) {
-                        zipOut.write(buffer, 0, length);
-                    }
-
-                    zipOut.closeEntry();
-                } catch (IOException e) {
-                    logger.error("Failed to archive file: {}", file.getPath());
-                    e.printStackTrace();
-                }
+                zipFile(file, zipOut);
             }
+            logger.info("Files archived to: {}", zipFilePath);
+            ActionLog actionLog = new ActionLog(
+                    ActionType.ARCHIVE,
+                    "Files archived to: " + zipFilePath,
+                    LocalDateTime.now(clock)
+            );
+            actionLogRepository.save(actionLog);
         } catch (IOException e) {
             logger.error("Error creating ZIP file at: {}", zipFilePath);
             throw e;
         }
     }
 
-    public List<Set<File>> findVersions(int maxDistance) {
+    private void zipFile(File file, ZipOutputStream zipOut) throws IOException {
+        String entryName = file.getName();
+        try (InputStream in = fileSystemService.openFileForRead(file.getPath())) {
+            ZipEntry zipEntry = new ZipEntry(entryName);
+            zipOut.putNextEntry(zipEntry);
+
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = in.read(buffer)) != -1) {
+                zipOut.write(buffer, 0, length);
+            }
+
+            zipOut.closeEntry();
+        } catch (IOException e) {
+            logger.error("Failed to archive file: {}", file.getPath());
+            throw e;
+        }
+    }
+
+    public List<List<File>> findVersions(int maxDistance) {
         List<EditDistanceResult> similarFiles = fileRepository.findSimilarFileNames(maxDistance);
         List<Set<File>> versionGroups = new ArrayList<>();
 
-        // Process the results to group files by similarity
         for (EditDistanceResult res : similarFiles) {
             File first = res.first();
             File second = res.second();
@@ -183,6 +194,11 @@ public class FileService {
             }
         }
 
-        return versionGroups;
+        return new ArrayList<>(versionGroups
+                .stream()
+                .filter(group -> group.size() > 1)
+                .map(ArrayList::new)
+                .toList()
+        );
     }
 }
