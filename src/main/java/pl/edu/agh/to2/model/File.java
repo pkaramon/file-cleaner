@@ -30,15 +30,19 @@ public class File {
     @Column(nullable = false)
     private long lastModified;
 
+    @Column(nullable = false)
+    private String hash;
+
     public File() {
 
     }
 
-    public File(String name, String path, long size, long lastModified) {
+    public File(String name, String path, long size, long lastModified, String hash) {
         this.name = name;
         this.path = path;
         this.size = size;
         this.lastModified = lastModified;
+        this.hash = hash;
     }
 
     public long getId() {
@@ -61,6 +65,10 @@ public class File {
         this.size = size;
     }
 
+    public String getHash() {
+        return hash;
+    }
+
     public long getLastModified() {
         return lastModified;
     }
@@ -79,7 +87,8 @@ public class File {
                 getSize() == file.getSize() &&
                 getLastModified() == file.getLastModified()
                 && Objects.equals(getName(), file.getName())
-                && Objects.equals(getPath(), file.getPath());
+                && Objects.equals(getPath(), file.getPath())
+                && Objects.equals(getHash(), file.getHash());
     }
 
     @Override
@@ -89,7 +98,8 @@ public class File {
                 getName(),
                 getPath(),
                 getSize(),
-                getLastModified()
+                getLastModified(),
+                getHash()
         );
     }
 }

@@ -3,6 +3,7 @@ package pl.edu.agh.to2.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import pl.edu.agh.to2.model.File;
 
@@ -26,5 +27,26 @@ public interface FileRepository extends JpaRepository<File, Long> {
     @Modifying
     @Query("DELETE FROM File f")
     void deleteAll();
+
+
+    @Query("SELECT f FROM File f WHERE (f.hash, f.size) in " +
+            "(SELECT f.hash, f.size FROM File f GROUP BY f.hash, f.size HAVING COUNT(f) > 1) " +
+            "ORDER BY f.id" )
+    List<File> findDuplicates();
+
+    @Query("SELECT levenshtein(f.name, g.name), f, g " +
+            "FROM File f " +
+            "INNER JOIN File g ON f.id < g.id " +
+            "WHERE levenshtein(f.name, g.name) < :maxDistance " +
+            "ORDER BY levenshtein(f.name, g.name), f.id, g.id")
+    List<Object[]> _findSimilarFilesWithLevenshtein(@Param("maxDistance") int maxDistance);
+
+
+    default List<EditDistanceResult> findSimilarFileNames(int maxDistance) {
+        return _findSimilarFilesWithLevenshtein(maxDistance).stream()
+                .map(o -> new EditDistanceResult((File) o[1], (File) o[2], (int) o[0]))
+                .toList();
+    }
+
 
 }

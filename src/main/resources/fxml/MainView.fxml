@@ -4,10 +4,10 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
-
 <BorderPane xmlns:fx="http://javafx.com/fxml"
             xmlns="http://javafx.com/javafx"
-            fx:controller="pl.edu.agh.to2.gui.controller.MainViewController">
+            fx:controller="pl.edu.agh.to2.gui.controller.MainViewController"
+            style="-fx-min-width: 400; -fx-min-height: 200;">
 
     <top>
         <HBox spacing="10" alignment="CENTER" style="-fx-padding: 10;">
@@ -16,7 +16,7 @@
     </top>
 
     <center>
-        <TextField fx:id="pathInput" promptText="Enter file path..." style="-fx-padding: 10;" />
+        <TextField fx:id="pathInput" promptText="Enter file path..." style="-fx-padding: 10;"/>
     </center>
 
     <bottom>
