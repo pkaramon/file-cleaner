@@ -153,13 +153,15 @@ public class FileService {
         actionLogRepository.save(actionLog);
     }
 
+
     @Transactional
     public void archiveFiles(List<File> files, Path zipFilePath) throws IOException {
         try (OutputStream outStream = Files.newOutputStream(zipFilePath);
              ZipOutputStream zipOut = new ZipOutputStream(outStream)) {
+            Map<String, Integer> basenameToCount = new HashMap<>();
 
             for (File file : files) {
-                zipFile(file, zipOut, zipFilePath.getFileSystem());
+                zipFile(file, zipOut, zipFilePath.getFileSystem(), basenameToCount);
             }
             logger.info("Files archived to: {}", zipFilePath);
             ActionLog actionLog = new ActionLog(
@@ -174,11 +176,22 @@ public class FileService {
         }
     }
 
-    private void zipFile(File file, ZipOutputStream zipOut, FileSystem fileSystem) throws IOException {
+    private void zipFile(File file,
+                         ZipOutputStream zipOut,
+                         FileSystem fileSystem,
+                         Map<String, Integer> basenameToCount) throws IOException {
         String entryName = file.getName();
-        Path entryPath = fileSystem.getPath(file.getStringPath());
-        try (InputStream in = Files.newInputStream(entryPath)) {
+        if (basenameToCount.containsKey(entryName)) {
+            int count = basenameToCount.get(entryName) + 1;
+            entryName =
+                    "%s_v%d.%s".formatted(getWithoutExtension(file.getName()), count, getExtension(file.getName()));
+            basenameToCount.put(file.getName(), count);
+        } else {
+            basenameToCount.put(file.getName(), 1);
+        }
 
+        Path entryPath = fileSystem.getPath(file.getPath());
+        try (InputStream in = Files.newInputStream(entryPath)) {
             ZipEntry zipEntry = new ZipEntry(entryName);
             zipOut.putNextEntry(zipEntry);
 
@@ -194,6 +207,17 @@ public class FileService {
             throw e;
         }
     }
+
+    public String getWithoutExtension(String fileName) {
+        int dotIndex = fileName.lastIndexOf('.');
+        return (dotIndex == -1) ? fileName : fileName.substring(0, dotIndex);
+    }
+
+    public String getExtension(String fileName) {
+        int dotIndex = fileName.lastIndexOf('.');
+        return (dotIndex == -1) ? "" : fileName.substring(dotIndex + 1);
+    }
+
 
     public List<List<File>> findVersions(int maxDistance) {
         List<EditDistanceResult> similarFiles = fileRepository.findSimilarFileNames(maxDistance);

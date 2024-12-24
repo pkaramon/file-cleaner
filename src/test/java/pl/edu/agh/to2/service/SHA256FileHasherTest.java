@@ -24,9 +24,10 @@ class SHA256FileHasherTest {
     private FileSystem fs;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
         fs = Jimfs.newFileSystem(Configuration.unix());
         tempDir = fs.getPath("testDir");
+        Files.createDirectory(tempDir);
     }
 
     @AfterEach

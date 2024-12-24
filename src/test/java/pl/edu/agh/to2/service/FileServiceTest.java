@@ -73,7 +73,6 @@ class FileServiceTest {
         fs.close();
     }
 
-
     List<Path> setupDirectory(Path dir, String... fileNames) throws IOException {
         return setupDirectoryWithHashes(dir, List.of(fileNames), null);
     }
@@ -294,8 +293,8 @@ class FileServiceTest {
         var dir = fs.getPath("Docs/");
         setupDirectoryWithContents(
                 dir,
-                List.of("a.txt", "b.txt", "c.txt"),
-                List.of("a", "b", "c")
+                List.of("a.txt", "b.txt", "c.txt", "nested/a.txt"),
+                List.of("a", "b", "c", "a")
         );
 
         Files.createDirectory(fs.getPath("Archives/"));
@@ -317,14 +316,14 @@ class FileServiceTest {
             while ((entry = zis.getNextEntry()) != null) {
                 fileCount++;
                 switch (entry.getName()) {
-                    case "a.txt" -> assertEquals("a", new String(zis.readAllBytes()));
+                    case "a.txt", "a_v2.txt" -> assertEquals("a", new String(zis.readAllBytes()));
                     case "b.txt" -> assertEquals("b", new String(zis.readAllBytes()));
                     case "c.txt" -> assertEquals("c", new String(zis.readAllBytes()));
                     default -> fail("Unexpected file in ZIP: " + entry.getName());
                 }
                 zis.closeEntry();
             }
-            assertEquals(3, fileCount, "Incorrect number of files in the ZIP archive.");
+            assertEquals(4, fileCount, "Incorrect number of files in the ZIP archive.");
         }
     }
 

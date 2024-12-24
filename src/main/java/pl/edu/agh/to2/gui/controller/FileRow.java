@@ -8,7 +8,7 @@ public class FileRow {
     private final String hash;
 
     public FileRow(File file) {
-        this(String.valueOf(file.getPath()), file.getSize() + " bytes", file.getHash());
+        this(file.getPath(), file.getSize() + " bytes", file.getHash());
     }
 
     public FileRow(String path, String size, String hash) {

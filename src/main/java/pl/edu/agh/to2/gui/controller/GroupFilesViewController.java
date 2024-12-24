@@ -74,7 +74,7 @@ public class GroupFilesViewController {
     private HBox displayButtons(List<File> files, TableView<FileRow> tableView) {
         Button deleteAllBtn = new Button("Delete All");
         deleteAllBtn.setOnAction(event -> taskExecutor.run(() -> {
-            files.forEach(f -> fileService.deleteFile(f.getPath()));
+            files.forEach(f -> fileService.deleteFile(Path.of(f.getPath())));
             return null;
         }, __ -> refresh()));
 
