@@ -68,7 +68,7 @@ public class FileListViewController {
 
     @FXML
     private void onLargestClicked() {
-        int n = 10;
+        int n = askForNumberOfLargestFiles();
         taskExecutor.run(() -> fileService.findLargestFilesIn(Path.of(directoryPath), n), this::updateTable);
     }
 
@@ -135,6 +135,24 @@ public class FileListViewController {
         return result.get();
     }
 
+    private int askForNumberOfLargestFiles() {
+        Optional<Integer> result = Optional.empty();
+        while (result.isEmpty()) {
+            TextInputDialog dialog = new TextInputDialog("10");
+            dialog.setTitle("Select number of largest files");
+            dialog.setContentText("Please enter a number:");
+
+            result = dialog.showAndWait().flatMap(s -> {
+                        try {
+                            return Optional.of(Integer.parseInt(s));
+                        } catch (NumberFormatException e) {
+                            return Optional.empty();
+                        }
+                    }
+            );
+        }
+        return result.get();
+    }
     @FXML
     private void onShowLogsClicked() {
         var res = loader.load("/fxml/ActionLogListView.fxml");
