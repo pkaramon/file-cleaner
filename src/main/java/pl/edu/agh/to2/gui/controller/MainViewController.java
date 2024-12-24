@@ -17,6 +17,9 @@ public class MainViewController {
     @FXML
     private TextField pathInput;
 
+    @FXML
+    private TextField regexpInput;
+
     public MainViewController(SpringFXMLLoader loader) {
         this.loader = loader;
     }
@@ -35,6 +38,7 @@ public class MainViewController {
     @FXML
     public void onAcceptClicked() {
         String path = pathInput.getText();
+        String regexp = regexpInput.getText();
         if (path == null || path.trim().isEmpty()) {
             pathInput.setStyle("-fx-border-color: red; -fx-border-width: 2;");
             System.out.println("Path is empty!");
@@ -45,6 +49,8 @@ public class MainViewController {
         var res = loader.load("/fxml/FileListView.fxml");
         Scene scene = res.scene();
         FileListViewController controller = (FileListViewController) res.controller();
+
+        controller.setPattern(regexp);
         controller.setDirectoryPath(path);
 
 

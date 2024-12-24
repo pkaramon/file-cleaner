@@ -41,6 +41,8 @@ public class FileListViewController {
 
     private String directoryPath;
 
+    private String pattern;
+
     public FileListViewController(SpringFXMLLoader loader, FileService fileService) {
         this.loader = loader;
         this.fileService = fileService;
@@ -59,6 +61,10 @@ public class FileListViewController {
     public void setDirectoryPath(String path) {
         this.directoryPath = path;
         updateFileList();
+    }
+
+    public void setPattern(String pattern) {
+        this.pattern = pattern;
     }
 
     @FXML
@@ -167,7 +173,7 @@ public class FileListViewController {
 
     private void updateFileList() {
         taskExecutor.run(() -> {
-                    fileService.loadFromPath(Path.of(directoryPath), Pattern.compile(".*"));
+                    fileService.loadFromPath(Path.of(directoryPath), Pattern.compile((pattern == null || pattern.isEmpty()) ? ".*" : pattern));
                     return fileService.findFilesInPath(Path.of(directoryPath));
                 },
                 this::updateTable
