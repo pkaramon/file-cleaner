@@ -3,8 +3,8 @@ package pl.edu.agh.to2.service;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import pl.edu.agh.to2.model.ActionLog;
 import pl.edu.agh.to2.repository.ActionLogRepository;
 import pl.edu.agh.to2.types.ActionType;
@@ -15,7 +15,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
-@AutoConfigureTestDatabase
+@ActiveProfiles("test")
 @Transactional
 class ActionLogServiceTest {
     @Autowired

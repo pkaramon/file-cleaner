@@ -1,6 +1,9 @@
 package pl.edu.agh.to2.service;
 
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
 import jakarta.transaction.Transactional;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -14,14 +17,18 @@ import pl.edu.agh.to2.repository.ActionLogRepository;
 import pl.edu.agh.to2.repository.FileRepository;
 import pl.edu.agh.to2.types.ActionType;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -36,26 +43,19 @@ import static org.mockito.Mockito.*;
 @Transactional
 class FileServiceTest {
     private static final Pattern defaultPattern = Pattern.compile(".*");
+    FileSystem fs;
 
     @Autowired
     @InjectMocks
     private FileService fileService;
-
     @Autowired
     private FileRepository fileRepository;
-
     @Autowired
     private ActionLogRepository actionLogRepository;
-
-    @MockBean
-    private FileSystemService fileSystemService;
-
     @MockBean
     private FileHasher fileHasher;
-
     @MockBean
     private Clock clock;
-
 
     @BeforeEach
     void setup() throws IOException {
@@ -65,42 +65,64 @@ class FileServiceTest {
         when(fileHasher.hash(Mockito.any())).thenReturn("hash");
         when(clock.instant()).thenReturn(Instant.now());
         when(clock.getZone()).thenReturn(ZoneId.systemDefault());
+        fs = Jimfs.newFileSystem(Configuration.unix());
     }
 
-    void addSampleDataToDatabase() {
+    @AfterEach
+    void tearDown() throws IOException {
+        fs.close();
+    }
+
+
+    List<Path> setupDirectory(Path dir, String... fileNames) throws IOException {
+        return setupDirectoryWithHashes(dir, List.of(fileNames), null);
+    }
+
+    void setupDirectoryWithContents(Path dir, List<String> fileNames, List<String> contents) throws IOException {
+        baseSetupDirectory(dir, fileNames, null, contents);
+    }
+
+    List<Path> setupDirectoryWithHashes(Path dir, List<String> fileNames, List<String> hashes) throws IOException {
+        return baseSetupDirectory(dir, fileNames, hashes, null);
+    }
+
+    List<Path> baseSetupDirectory(Path dir,
+                                  List<String> fileNames,
+                                  List<String> hashes,
+                                  List<String> contents) throws IOException {
+        Files.createDirectory(dir);
+        for (int i = 0; i < fileNames.size(); i++) {
+            Path file = dir.resolve(fileNames.get(i));
+            Files.createDirectories(file.getParent());
+            if (contents != null) {
+                Files.write(file, contents.get(i).getBytes());
+            } else {
+                Files.createFile(file);
+            }
+            if (hashes != null) {
+                when(fileHasher.hash(file)).thenReturn(hashes.get(i));
+            }
+        }
+
+        return fileNames.stream()
+                .map(dir::resolve)
+                .toList();
+    }
+
+    @Test
+    void testFindLargestFiles() {
+        // given
         File a = new File("a.txt", "Docs/a.txt", 100, 100, "a");
         File b = new File("b.txt", "Docs/b.txt", 200, 200, "b");
         File c = new File("c.txt", "Docs/c.txt", 300, 300, "c");
         File d = new File("notes.txt", "Desktop/notes.txt", 400, 400, "d");
 
         fileRepository.saveAll(List.of(a, b, c, d));
-    }
 
-    FileInfo exampleFileInfo(String path, long size, long lastModified) {
-        return new FileInfo(path, size, lastModified);
-    }
+        // when
+        List<File> largestFiles = fileService.findLargestFilesIn(Path.of("Docs/"), 2);
 
-    FileInfo exampleFileInfo(String path) {
-        return exampleFileInfo(path, 100, 100);
-    }
-
-    void setupFileHashes(List<FileInfo> files, List<String> hashes) {
-        for (int i = 0; i < files.size(); i++) {
-            try {
-                when(fileHasher.hash(String.valueOf(files.get(i).path()))).thenReturn(hashes.get(i));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-
-    @Test
-    void testFindLargestFiles() {
-        addSampleDataToDatabase();
-
-        List<File> largestFiles = fileService.findLargestFilesIn("Docs/", 2);
-
+        // then
         assertEquals(
                 largestFiles.stream().map(File::getName).toList(),
                 List.of("c.txt", "b.txt")
@@ -108,99 +130,131 @@ class FileServiceTest {
     }
 
     @Test
-    void testLoadFromPath_WhenDatabaseIsEmpty_AddsAllTheFiles() {
+    void testLoadFromPath_WhenDatabaseIsEmpty_AddsAllTheFiles() throws IOException {
         // given
-        var a = exampleFileInfo("Docs/a.txt");
-        var b = exampleFileInfo("Docs/b.txt");
-
-        when(fileSystemService.searchDirectory("Docs/", defaultPattern))
-                .thenReturn(List.of(a, b));
+        Path dir = fs.getPath("Docs/");
+        setupDirectory(dir, "a.txt", "b.txt");
 
         // when
-        fileService.loadFromPath("Docs/", defaultPattern);
+        fileService.loadFromPath(dir, defaultPattern);
 
         // then
-        List<File> files = fileService.findFilesInPath("Docs/");
+        List<File> files = fileService.findFilesInPath(dir);
         assertEquals(2, files.size());
-        assertTrue(files.contains(fileRepository.findByPath("Docs/a.txt").get()));
-        assertTrue(files.contains(fileRepository.findByPath("Docs/b.txt").get()));
+        assertTrue(files.contains(fileRepository.findByPath("Docs/a.txt").orElseThrow()));
+        assertTrue(files.contains(fileRepository.findByPath("Docs/b.txt").orElseThrow()));
     }
 
     @Test
-    void testLoadFromPath_WhenFileIsDeletedFromDirectory_ItsAlsoDeletedFromDb() {
+    void testLoadFromPath_RespectsPassedPattern() throws IOException {
         // given
-        var a = exampleFileInfo("Docs/a.txt");
-        when(fileSystemService.searchDirectory("Docs/", defaultPattern)).thenReturn(List.of(a));
-        fileService.loadFromPath("Docs/", defaultPattern);
-        when(fileSystemService.searchDirectory("Docs/", defaultPattern)).thenReturn(List.of());
+        Path dir = fs.getPath("Docs/");
+        setupDirectory(dir, "a.txt", "c.doc");
 
         // when
-        fileService.loadFromPath("Docs/", defaultPattern);
+        fileService.loadFromPath(dir, Pattern.compile(".*\\.txt$"));
 
         // then
-        assertTrue(fileRepository.findByPath("Docs/a.txt").isEmpty());
+        List<File> files = fileService.findFilesInPath(dir);
+        assertEquals(1, files.size());
+        assertTrue(files.contains(fileRepository.findByPath("Docs/a.txt").orElseThrow()));
+    }
+
+    @Test
+    void testLoadFromPath_WhenThereAreSubdirectories_ItRecursivelyTraversesThem() throws IOException {
+        // given
+        Path root = fs.getPath("Root/");
+        setupDirectory(root, "Desktop/file1.txt", "Docs/file2.txt", "Docs/file3.txt");
+        Pattern pattern = Pattern.compile(".*\\.txt$");
+
+        // when
+        fileService.loadFromPath(root, pattern);
+
+        // then
+        List<File> result = fileService.findFilesInPath(root);
+        assertEquals(3, result.size());
+        assertEquals(Set.of("file1.txt", "file2.txt", "file3.txt"),
+                result.stream().map(File::getName).collect(Collectors.toSet()));
+    }
+
+
+    @Test
+    void testLoadFromPath_WhenFileIsDeletedFromDirectory_ItsAlsoDeletedFromDb() throws IOException {
+        // given
+        Path dir = fs.getPath("Docs/");
+        setupDirectory(dir, "a.txt", "b.txt");
+
+        fileService.loadFromPath(dir, defaultPattern);
+
+        Files.delete(dir.resolve("a.txt"));
+
+        // when
+        fileService.loadFromPath(dir, defaultPattern);
+
+        // then
+        List<File> files = fileService.findFilesInPath(dir);
+        assertEquals(1, files.size());
+        assertEquals("b.txt", files.get(0).getName());
     }
 
     @Test
     void testLoadFromPath_ComputesHashForNewFiles() throws IOException {
         // given
-        var a = exampleFileInfo("Docs/a.txt");
-        setupFileHashes(List.of(a), List.of("a"));
-        when(fileSystemService.searchDirectory("Docs/", defaultPattern)).thenReturn(List.of(a));
+        Path dir = fs.getPath("Docs/");
+        Path a = setupDirectoryWithHashes(dir, List.of("a.txt"), List.of("a_hash")).get(0);
 
         // when
-        fileService.loadFromPath("Docs/", defaultPattern);
+        fileService.loadFromPath(dir, defaultPattern);
 
         // then
-        verify(fileHasher).hash("Docs/a.txt");
-        var fileA = fileRepository.findByPath("Docs/a.txt").get();
-        assertEquals("a", fileA.getHash());
+        verify(fileHasher).hash(a);
+        File fileA = fileRepository.findByPath("Docs/a.txt").orElseThrow();
+        assertEquals("a_hash", fileA.getHash());
     }
 
-    // TODO: "improve" performance by only amending changed files
     @Test
     void testLoadFromPath_SomeFilesHaveChanged_ItUpdatesAllFiles() throws IOException {
         // given
-        var a = exampleFileInfo("Docs/a.txt", 100, 100);
-        var b = exampleFileInfo("Docs/b.txt", 200, 200);
-        var c = exampleFileInfo("Docs/c.txt", 300, 300);
-        var d = exampleFileInfo("Docs/d.txt", 400, 400);
-        when(fileSystemService.searchDirectory("Docs/", defaultPattern)).thenReturn(List.of(a, b, c, d));
+        Path dir = fs.getPath("Docs/");
+        List<Path> files = setupDirectoryWithHashes(dir,
+                List.of("a.txt", "b.txt", "c.txt", "d.txt"),
+                List.of("a_hash", "b_hash", "c_hash", "d_hash")
+        );
 
-        fileService.loadFromPath("Docs/", defaultPattern);
+        fileService.loadFromPath(dir, defaultPattern);
 
-        var aChanged = exampleFileInfo("Docs/a.txt", 100, 200);
-        var bChanged = exampleFileInfo("Docs/b.txt", 200, 200);
-        when(fileSystemService.searchDirectory("Docs/", defaultPattern)).thenReturn(List.of(aChanged, bChanged, c));
+
+        Files.setLastModifiedTime(files.get(0), FileTime.from(123, TimeUnit.SECONDS));
+        Files.setLastModifiedTime(files.get(1), FileTime.from(321, TimeUnit.SECONDS));
+        Files.delete(files.get(3));
 
         // when
-        fileService.loadFromPath("Docs/", defaultPattern);
+        fileService.loadFromPath(dir, defaultPattern);
 
         // then
         assertEquals(3, fileRepository.findAll().size());
-        verify(fileHasher, times(2)).hash("Docs/a.txt");
-        verify(fileHasher, times(2)).hash("Docs/b.txt");
-        verify(fileHasher, times(2)).hash("Docs/c.txt");
-        verify(fileHasher, times(1)).hash("Docs/d.txt");
+        verify(fileHasher, times(2)).hash(files.get(0));
+        verify(fileHasher, times(2)).hash(files.get(1));
+        verify(fileHasher, times(2)).hash(files.get(2));
+        verify(fileHasher, times(1)).hash(files.get(3));
 
     }
 
     @Test
     void testDeleteFile() throws IOException {
         // given
-        var a = exampleFileInfo("Docs/a.txt", 100, 100);
-        when(fileSystemService.searchDirectory("Docs/", defaultPattern)).thenReturn(List.of(a));
-        fileService.loadFromPath("Docs/", defaultPattern);
+        Path dir = fs.getPath("Docs/");
+        Path a = setupDirectory(dir, "a.txt").get(0);
 
         when(clock.instant()).thenReturn(Instant.parse("2024-01-01T07:00:00Z"));
         when(clock.getZone()).thenReturn(ZoneId.of("UCT"));
 
         // when
-        fileService.deleteFile("Docs/a.txt");
+        fileService.deleteFile(a);
 
         // then
+        assertTrue(Files.notExists(a));
         assertTrue(fileRepository.findByPath("Docs/a.txt").isEmpty());
-        verify(fileSystemService).deleteFile("Docs/a.txt");
 
         var log = actionLogRepository.findAll().get(0);
         assertEquals("File deleted: Docs/a.txt", log.getDescription());
@@ -212,23 +266,21 @@ class FileServiceTest {
     }
 
     @Test
-    void testGetDuplicates_SameHashesSameSize_ReturnsDuplicates() {
+    void testGetDuplicates_IfFilesHaveTheSameHashSameSize_ReturnsThem() throws IOException {
         // given
-        var a = exampleFileInfo("Docs/a.txt", 100, 100);
-        var b = exampleFileInfo("Docs/b.txt", 200, 100);
-        var c = exampleFileInfo("Docs/c.txt", 100, 100);
-        var d = exampleFileInfo("Docs/d.txt", 100, 100);
-        var e = exampleFileInfo("Docs/e.txt", 200, 100);
-        var f = exampleFileInfo("Docs/f.txt", 200, 100);
-
-        when(fileSystemService.searchDirectory("Docs/", defaultPattern)).thenReturn(List.of(a, b, c, d, e, f));
-        setupFileHashes(List.of(a, b, c, d, e, f),
-                List.of("1", "2", "1", "1", "2", "3"));
-        fileService.loadFromPath("Docs/", defaultPattern);
+        Path dir = fs.getPath("Docs/");
+        setupDirectoryWithHashes(dir,
+                List.of("a.txt", "b.txt", "c.txt", "d.txt", "e.txt", "f.txt"),
+                List.of("1", "2", "1", "1", "2", "3")
+        );
+        fileService.loadFromPath(dir, defaultPattern);
 
         // when
         List<List<File>> duplicates = fileService.findDuplicatedGroups();
-        List<List<String>> fileNames = duplicates.stream().map(inner -> inner.stream().map(File::getName).toList()).toList();
+        List<List<String>> fileNames = duplicates
+                .stream()
+                .map(inner -> inner.stream().map(File::getName).toList())
+                .toList();
 
         // then
         assertEquals(2, duplicates.size());
@@ -239,96 +291,77 @@ class FileServiceTest {
     @Test
     void testArchiveFiles() throws IOException {
         // given
-        var a = exampleFileInfo("Docs/a.txt", 100, 100);
-        var b = exampleFileInfo("Docs/b.txt", 200, 100);
-        var c = exampleFileInfo("Docs/c.txt", 300, 100);
+        var dir = fs.getPath("Docs/");
+        setupDirectoryWithContents(
+                dir,
+                List.of("a.txt", "b.txt", "c.txt"),
+                List.of("a", "b", "c")
+        );
 
-        when(fileSystemService.searchDirectory("Docs/", defaultPattern)).thenReturn(List.of(a, b, c));
-        fileService.loadFromPath("Docs/", defaultPattern);
+        Files.createDirectory(fs.getPath("Archives/"));
+        Path zipPath = fs.getPath("Archives/test.zip");
 
-        List<File> docsFiles = fileService.findFilesInPath("Docs/");
-        String zipPath = "Docs/test.zip";
-
-        when(fileSystemService.openFileForRead("Docs/a.txt"))
-                .thenReturn(new ByteArrayInputStream("a".getBytes()));
-        when(fileSystemService.openFileForRead("Docs/b.txt"))
-                .thenReturn(new ByteArrayInputStream("b".getBytes()));
-        when(fileSystemService.openFileForRead("Docs/c.txt"))
-                .thenReturn(new ByteArrayInputStream("c".getBytes()));
-
-        ByteArrayOutputStream zipFileOutputStream = new ByteArrayOutputStream();
-        when(fileSystemService.openFileForWrite(zipPath)).thenReturn(zipFileOutputStream);
+        fileService.loadFromPath(dir, defaultPattern);
+        var docsFiles = fileService.findFilesInPath(dir);
 
         // when
         fileService.archiveFiles(docsFiles, zipPath);
 
         // then
-        ByteArrayInputStream zipInputStream = new ByteArrayInputStream(zipFileOutputStream.toByteArray());
-        try (ZipInputStream zipIn = new ZipInputStream(zipInputStream)) {
+        assertTrue(Files.exists(zipPath));
+        try (InputStream is = Files.newInputStream(zipPath);
+             ZipInputStream zis = new ZipInputStream(is)
+        ) {
             ZipEntry entry;
             int fileCount = 0;
-
-            while ((entry = zipIn.getNextEntry()) != null) {
+            while ((entry = zis.getNextEntry()) != null) {
                 fileCount++;
                 switch (entry.getName()) {
-                    case "a.txt" -> assertEquals("a", new String(zipIn.readAllBytes()));
-                    case "b.txt" -> assertEquals("b", new String(zipIn.readAllBytes()));
-                    case "c.txt" -> assertEquals("c", new String(zipIn.readAllBytes()));
+                    case "a.txt" -> assertEquals("a", new String(zis.readAllBytes()));
+                    case "b.txt" -> assertEquals("b", new String(zis.readAllBytes()));
+                    case "c.txt" -> assertEquals("c", new String(zis.readAllBytes()));
                     default -> fail("Unexpected file in ZIP: " + entry.getName());
                 }
-                zipIn.closeEntry();
+                zis.closeEntry();
             }
-
             assertEquals(3, fileCount, "Incorrect number of files in the ZIP archive.");
         }
     }
 
+
     @Test
     void testArchivesFiles_AddsActionLog() throws IOException {
         // given
-        var a = exampleFileInfo("Docs/a.txt", 100, 100);
-        when(fileSystemService.searchDirectory("Docs/", defaultPattern)).thenReturn(List.of(a));
-        fileService.loadFromPath("Docs/", defaultPattern);
-
-        var fileA = fileRepository.findByPath("Docs/a.txt").get();
-
-        String zipPath = "Docs/test.zip";
-        ByteArrayOutputStream zipFileOutputStream = new ByteArrayOutputStream();
-        when(fileSystemService.openFileForWrite(zipPath)).thenReturn(zipFileOutputStream);
-        when(fileSystemService.openFileForRead("Docs/a.txt"))
-                .thenReturn(new ByteArrayInputStream("a".getBytes()));
+        var dir = fs.getPath("Docs/");
+        setupDirectoryWithContents(dir, List.of("a.txt"), List.of("a"));
+        fileService.loadFromPath(dir, defaultPattern);
+        var fileA = fileRepository.findByPath("Docs/a.txt").orElseThrow();
+        Files.createDirectory(fs.getPath("Archives/"));
+        Path zipPath = fs.getPath("Archives/test.zip");
 
         // when
         fileService.archiveFiles(List.of(fileA), zipPath);
 
         // then
         var log = actionLogRepository.findAll().get(0);
-        assertEquals("Files archived to: Docs/test.zip", log.getDescription());
+        assertEquals("Files archived to: Archives/test.zip", log.getDescription());
         assertEquals(ActionType.ARCHIVE, log.getActionType());
     }
 
     @Test
-    void testFindVersions_FindsFilesWhoseNamesAreWithinPassedEditDistance() {
+    void testFindVersions_FindsFilesWhoseNamesAreWithinPassedEditDistance() throws IOException {
         // given
-        var v1 = exampleFileInfo("Docs/ver1.txt");
-        var v2 = exampleFileInfo("Docs/ver2.txt");
-        var v3 = exampleFileInfo("Docs/ver3.txt");
-        var v10 = exampleFileInfo("Docs/ver10.txt");
-        var v_9 = exampleFileInfo("Docs/ver_9.txt");
-        var hello = exampleFileInfo("Docs/hello.txt");
-        var hello2 = exampleFileInfo("Docs/hello2.txt");
-        var world = exampleFileInfo("Docs/world.txt");
+        var dir = fs.getPath("Docs/");
+        setupDirectory(dir, "ver1.txt", "ver2.txt", "ver3.txt", "ver10.txt",
+                "ver_9.txt", "hello.txt", "hello2.txt", "world.txt");
 
-        when(fileSystemService.searchDirectory("Docs/", defaultPattern))
-                .thenReturn(List.of(v1, v2, v3, v10, v_9, hello, hello2, world));
-        fileService.loadFromPath("Docs/", defaultPattern);
+        fileService.loadFromPath(dir, defaultPattern);
 
         // when
         List<List<File>> versions = fileService.findVersions(3);
 
         // then
         assertEquals(2, versions.size());
-        System.out.println(versions.stream().map(inner -> inner.stream().map(File::getName).toList()).toList());
         List<Set<String>> versionFileNames = versions.stream()
                 .map(inner -> inner.stream().map(File::getName).collect(Collectors.toSet()))
                 .toList();

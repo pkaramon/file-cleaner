@@ -13,6 +13,7 @@ import pl.edu.agh.to2.gui.task.TaskExecutor;
 import pl.edu.agh.to2.model.File;
 import pl.edu.agh.to2.service.FileService;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
 
@@ -82,7 +83,7 @@ public class GroupFilesViewController {
 
         Button deleteSelectedBtn = new Button("Delete Selected");
         deleteSelectedBtn.setOnAction(event -> taskExecutor.run(() -> {
-            tableView.getSelectionModel().getSelectedItems().forEach(f -> fileService.deleteFile(f.getPath()));
+            tableView.getSelectionModel().getSelectedItems().forEach(f -> fileService.deleteFile(Path.of(f.getPath())));
             return null;
         }, __ -> refresh()));
 
@@ -101,7 +102,7 @@ public class GroupFilesViewController {
         }
 
         taskExecutor.run(() -> {
-            fileService.archiveFiles(files, selectedFile.getAbsolutePath());
+            fileService.archiveFiles(files, selectedFile.toPath());
             return null;
         }, __ -> {
             Alert alert = new Alert(Alert.AlertType.INFORMATION, "Files archived successfully");

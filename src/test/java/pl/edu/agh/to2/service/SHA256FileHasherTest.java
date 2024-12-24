@@ -1,14 +1,17 @@
 package pl.edu.agh.to2.service;
 
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Random;
 import java.util.stream.Stream;
 
@@ -18,17 +21,23 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 class SHA256FileHasherTest {
     private final SHA256FileHasher fileHasher = new SHA256FileHasher();
     private Path tempDir;
+    private FileSystem fs;
 
     @BeforeEach
-    void setUp() throws IOException {
-        tempDir = Files.createTempDirectory("testDir");
+    void setUp() {
+        fs = Jimfs.newFileSystem(Configuration.unix());
+        tempDir = fs.getPath("testDir");
     }
 
     @AfterEach
     void tearDown() throws IOException {
         try (Stream<Path> paths = Files.walk(tempDir).sorted(Comparator.reverseOrder())) {
-            paths.map(Path::toFile).forEach(File::delete);
+            List<Path> pathsList = paths.toList();
+            for (Path path : pathsList) {
+                Files.deleteIfExists(path);
+            }
         }
+        fs.close();
     }
 
     @Test
@@ -43,8 +52,8 @@ class SHA256FileHasherTest {
         Files.write(file2, bytes);
 
         // when
-        var hash1 = fileHasher.hash(String.valueOf(file1));
-        var hash2 = fileHasher.hash(String.valueOf(file2));
+        var hash1 = fileHasher.hash(file1);
+        var hash2 = fileHasher.hash(file2);
 
         // then
         assertEquals(hash1, hash2);
@@ -59,8 +68,8 @@ class SHA256FileHasherTest {
         Files.writeString(file2, "content2");
 
         // when
-        var hash1 = fileHasher.hash(String.valueOf(file1));
-        var hash2 = fileHasher.hash(String.valueOf(file2));
+        var hash1 = fileHasher.hash(file1);
+        var hash2 = fileHasher.hash(file2);
 
         // then
         assertEquals(64, hash1.length());

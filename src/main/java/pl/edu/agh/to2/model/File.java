@@ -2,6 +2,7 @@ package pl.edu.agh.to2.model;
 
 import jakarta.persistence.*;
 
+import java.nio.file.Path;
 import java.util.Objects;
 
 @Entity
@@ -53,7 +54,11 @@ public class File {
         return name;
     }
 
-    public String getPath() {
+    public Path getPath() {
+        return Path.of(path);
+    }
+
+    public String getStringPath() {
         return path;
     }
 
@@ -61,12 +66,12 @@ public class File {
         return size;
     }
 
-    public String getHash() {
-        return hash;
-    }
-
     public void setSize(long size) {
         this.size = size;
+    }
+
+    public String getHash() {
+        return hash;
     }
 
     public long getLastModified() {

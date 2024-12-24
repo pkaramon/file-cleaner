@@ -14,12 +14,15 @@ import pl.edu.agh.to2.types.ActionType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -27,19 +30,16 @@ import java.util.zip.ZipOutputStream;
 public class FileService {
     private static final Logger logger = LoggerFactory.getLogger(FileService.class);
     private final FileRepository fileRepository;
-    private final FileSystemService fileSystemService;
     private final Clock clock;
     private final ActionLogRepository actionLogRepository;
     private final FileHasher fileHasher;
 
 
     public FileService(FileRepository fileRepository,
-                       FileSystemService fileSystemService,
                        Clock clock,
                        ActionLogRepository actionLogRepository,
                        FileHasher fileHasher) {
         this.fileRepository = fileRepository;
-        this.fileSystemService = fileSystemService;
         this.clock = clock;
         this.actionLogRepository = actionLogRepository;
         this.fileHasher = fileHasher;
@@ -47,27 +47,67 @@ public class FileService {
 
 
     @Transactional
-    public void loadFromPath(String path, Pattern pattern) {
+    public void loadFromPath(Path root, Pattern pattern) {
         fileRepository.deleteAll();
         fileRepository.flush();
 
-        Collection<FileInfo> files = fileSystemService.searchDirectory(path, pattern);
 
+        List<FileInfo> files = searchDirectory(root, pattern);
         List<File> fileRecords = files.stream()
                 .map(f -> new File(
-                        Path.of(f.path()).getFileName().toString(),
+                        root.getFileSystem().getPath(f.path()).getFileName().toString(),
                         f.path(),
                         f.size(),
                         f.lastModified(),
-                        tryToHash(f.path())))
+                        tryToHash(root.getFileSystem().getPath(f.path()))
+                ))
                 .toList();
 
         fileRepository.saveAll(fileRecords);
 
-        logger.info("Files loaded from path: {}. Number of files: {}", path, fileRecords.size());
+        logger.info("Files loaded from path: {}. Number of files: {}", root, fileRecords.size());
     }
 
-    private String tryToHash(String path) {
+    private List<FileInfo> searchDirectory(Path path, Pattern pattern) {
+        List<FileInfo> fileList = new LinkedList<>();
+        if (Files.notExists(path) || !Files.isDirectory(path)) {
+            logger.info("Invalid folder path provided.");
+            return fileList;
+        }
+        search(fileList, path, pattern);
+
+        return fileList;
+    }
+
+    private void search(List<FileInfo> resultsList, Path dir, Pattern pattern) {
+        try (Stream<Path> files = Files.list(dir)) {
+            List<Path> filesList = files.toList();
+            for (Path file : filesList) {
+                handleFile(resultsList, pattern, file);
+            }
+        } catch (IOException ignored) {
+        }
+    }
+
+    private void handleFile(List<FileInfo> resultsList, Pattern pattern, Path file) throws IOException {
+        if (Files.isDirectory(file)) {
+            search(resultsList, file, pattern);
+        } else {
+            String fileName = file.getFileName().toString();
+            if (pattern == null || pattern.matcher(fileName).matches()) {
+                logger.info("File path: {}", file);
+                FileInfo fileInfo = new FileInfo(
+                        file.toString(),
+                        Files.size(file),
+                        Files.getLastModifiedTime(file).toMillis()
+                );
+                resultsList.add(fileInfo);
+            }
+        }
+    }
+
+
+    private String tryToHash(Path path) {
         try {
             return fileHasher.hash(path);
         } catch (IOException e) {
@@ -76,12 +116,12 @@ public class FileService {
         }
     }
 
-    public List<File> findFilesInPath(String directoryPath) {
-        return fileRepository.findByPathStartingWith(directoryPath);
+    public List<File> findFilesInPath(Path directoryPath) {
+        return fileRepository.findByPathStartingWith(String.valueOf(directoryPath));
     }
 
-    public List<File> findLargestFilesIn(String path, int n) {
-        return fileRepository.findLargestFilesIn(path, n);
+    public List<File> findLargestFilesIn(Path path, int n) {
+        return fileRepository.findLargestFilesIn(String.valueOf(path), n);
     }
 
 
@@ -93,14 +133,14 @@ public class FileService {
     }
 
     @Transactional
-    public void deleteFile(String path) {
+    public void deleteFile(Path path) {
         try {
-            fileSystemService.deleteFile(path);
+            Files.delete(path);
         } catch (IOException e) {
             logger.error("Error deleting file: {}", path, e);
             return;
         }
-        fileRepository.deleteByPath(path);
+        fileRepository.deleteByPath(path.toString());
 
         logger.info("File deleted: {}", path);
 
@@ -114,27 +154,12 @@ public class FileService {
     }
 
     @Transactional
-    public void deleteDuplicates(Map<Long, List<File>> duplicates) {
-        // Iteracja po grupach duplikatów
-        for (Map.Entry<Long, List<File>> entry : duplicates.entrySet()) {
-            List<File> duplicateFiles = entry.getValue();
-
-            // Usuwamy wszystkie pliki oprócz jednego
-            if (duplicateFiles.size() > 1) {
-                for (int i = 1; i < duplicateFiles.size(); i++) {
-                    File file = duplicateFiles.get(i);
-                    deleteFile(file.getPath());  // Wywołanie metody usuwania pliku
-                }
-            }
-        }
-    }
-
-    @Transactional
-    public void archiveFiles(List<File> files, String zipFilePath) throws IOException {
-        try (OutputStream outStream = fileSystemService.openFileForWrite(zipFilePath);
+    public void archiveFiles(List<File> files, Path zipFilePath) throws IOException {
+        try (OutputStream outStream = Files.newOutputStream(zipFilePath);
              ZipOutputStream zipOut = new ZipOutputStream(outStream)) {
+
             for (File file : files) {
-                zipFile(file, zipOut);
+                zipFile(file, zipOut, zipFilePath.getFileSystem());
             }
             logger.info("Files archived to: {}", zipFilePath);
             ActionLog actionLog = new ActionLog(
@@ -149,9 +174,11 @@ public class FileService {
         }
     }
 
-    private void zipFile(File file, ZipOutputStream zipOut) throws IOException {
+    private void zipFile(File file, ZipOutputStream zipOut, FileSystem fileSystem) throws IOException {
         String entryName = file.getName();
-        try (InputStream in = fileSystemService.openFileForRead(file.getPath())) {
+        Path entryPath = fileSystem.getPath(file.getStringPath());
+        try (InputStream in = Files.newInputStream(entryPath)) {
+
             ZipEntry zipEntry = new ZipEntry(entryName);
             zipOut.putNextEntry(zipEntry);
 

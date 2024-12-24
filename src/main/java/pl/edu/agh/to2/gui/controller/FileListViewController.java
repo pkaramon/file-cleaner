@@ -17,6 +17,7 @@ import pl.edu.agh.to2.gui.utils.SpringFXMLLoader;
 import pl.edu.agh.to2.model.File;
 import pl.edu.agh.to2.service.FileService;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -68,7 +69,7 @@ public class FileListViewController {
     @FXML
     private void onLargestClicked() {
         int n = 10;
-        taskExecutor.run(() -> fileService.findLargestFilesIn(directoryPath, n), this::updateTable);
+        taskExecutor.run(() -> fileService.findLargestFilesIn(Path.of(directoryPath), n), this::updateTable);
     }
 
     @FXML
@@ -78,8 +79,8 @@ public class FileListViewController {
 
         if (!selectedRowsCopy.isEmpty()) {
             taskExecutor.run(() -> {
-                        selectedRowsCopy.forEach(row -> fileService.deleteFile(row.getPath()));
-                        return fileService.findFilesInPath(directoryPath);
+                        selectedRowsCopy.forEach(row -> fileService.deleteFile(Path.of(row.getPath())));
+                        return fileService.findFilesInPath(Path.of(directoryPath));
                     },
                     this::updateTable
             );
@@ -148,15 +149,15 @@ public class FileListViewController {
 
     private void updateFileList() {
         taskExecutor.run(() -> {
-                    fileService.loadFromPath(directoryPath, Pattern.compile(".*"));
-                    return fileService.findFilesInPath(directoryPath);
+                    fileService.loadFromPath(Path.of(directoryPath), Pattern.compile(".*"));
+                    return fileService.findFilesInPath(Path.of(directoryPath));
                 },
                 this::updateTable
         );
     }
 
     private void loadAllFiles() {
-        taskExecutor.run(() -> fileService.findFilesInPath(directoryPath), this::updateTable);
+        taskExecutor.run(() -> fileService.findFilesInPath(Path.of(directoryPath)), this::updateTable);
     }
 
     private void updateTable(List<File> files) {
