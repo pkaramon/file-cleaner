@@ -74,8 +74,11 @@ public class FileListViewController {
 
     @FXML
     private void onLargestClicked() {
-        int n = askForNumberOfLargestFiles();
-        taskExecutor.run(() -> fileService.findLargestFilesIn(Path.of(directoryPath), n), this::updateTable);
+        Optional<Integer> n = askForNumberOfLargestFiles();
+        if (n.isEmpty()) {
+            return;
+        }
+        taskExecutor.run(() -> fileService.findLargestFilesIn(Path.of(directoryPath), n.get()), this::updateTable);
     }
 
     @FXML
@@ -117,47 +120,47 @@ public class FileListViewController {
         stage.setMinHeight(720);
         stage.setMinWidth(1280);
         var controller = (GroupFilesViewController) res.controller();
-        int maxDistance = askUserForMaxDistance();
-        controller.show(fs -> fs.findVersions(maxDistance));
+        Optional<Integer> maxDistance = askUserForMaxDistance();
+        if (maxDistance.isEmpty()) {
+            return;
+        }
+        controller.show(fs -> fs.findVersions(maxDistance.get()));
         stage.showAndWait();
     }
 
-    private int askUserForMaxDistance() {
+    private Optional<Integer> askUserForMaxDistance() {
         Optional<Integer> result = Optional.empty();
-        while (result.isEmpty()) {
-            TextInputDialog dialog = new TextInputDialog("3");
-            dialog.setTitle("Select max edit distance");
-            dialog.setContentText("Please enter a max distance:");
+        TextInputDialog dialog = new TextInputDialog("3");
+        dialog.setTitle("Select max edit distance");
+        dialog.setContentText("Please enter a max distance:");
 
-            result = dialog.showAndWait().flatMap(s -> {
-                        try {
-                            return Optional.of(Integer.parseInt(s));
-                        } catch (NumberFormatException e) {
-                            return Optional.empty();
-                        }
+        result = dialog.showAndWait().flatMap(s -> {
+                    try {
+                        return Optional.of(Integer.parseInt(s));
+                    } catch (NumberFormatException e) {
+                        return Optional.empty();
                     }
-            );
-        }
-        return result.get();
+                }
+        );
+        return result;
     }
 
-    private int askForNumberOfLargestFiles() {
+    private Optional<Integer> askForNumberOfLargestFiles() {
         Optional<Integer> result = Optional.empty();
-        while (result.isEmpty()) {
-            TextInputDialog dialog = new TextInputDialog("10");
-            dialog.setTitle("Select number of largest files");
-            dialog.setContentText("Please enter a number:");
+        TextInputDialog dialog = new TextInputDialog("10");
+        dialog.setTitle("Select number of largest files");
+        dialog.setContentText("Please enter a number:");
 
-            result = dialog.showAndWait().flatMap(s -> {
-                        try {
-                            return Optional.of(Integer.parseInt(s));
-                        } catch (NumberFormatException e) {
-                            return Optional.empty();
-                        }
+        result = dialog.showAndWait().flatMap(s -> {
+                    try {
+                        return Optional.of(Integer.parseInt(s));
+                    } catch (NumberFormatException e) {
+                        return Optional.empty();
                     }
-            );
-        }
-        return result.get();
+                }
+        );
+
+        return result;
     }
     @FXML
     private void onShowLogsClicked() {
