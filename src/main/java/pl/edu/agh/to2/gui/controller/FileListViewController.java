@@ -3,12 +3,14 @@ package pl.edu.agh.to2.gui.controller;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.Scene;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.Pane;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.springframework.stereotype.Component;
@@ -27,6 +29,9 @@ public class FileListViewController {
     private final SpringFXMLLoader loader;
     private final FileService fileService;
     private TaskExecutor taskExecutor;
+
+    @FXML
+    private Stage stage;
 
     @FXML
     private Pane rootPane;
@@ -65,6 +70,10 @@ public class FileListViewController {
 
     public void setPattern(String pattern) {
         this.pattern = pattern;
+    }
+
+    public void setStage(Stage stage) {
+        this.stage = stage;
     }
 
     @FXML
@@ -127,6 +136,22 @@ public class FileListViewController {
         controller.show(fs -> fs.findVersions(maxDistance.get()));
         stage.showAndWait();
     }
+
+    @FXML
+    private void onSelectNewPathClicked() {
+        Scene scene = loader.load("/fxml/MainView.fxml").scene();
+
+        Stage stage = new Stage();
+        stage.setTitle("File Explorer");
+        stage.setScene(scene);
+
+        stage.show();
+    }
+
+    public void closeCurrentStage() {
+        stage.close();
+    }
+
 
     private Optional<Integer> askUserForMaxDistance() {
         Optional<Integer> result = Optional.empty();

@@ -20,6 +20,7 @@ public class MainViewController {
     @FXML
     private TextField regexpInput;
 
+    private FileListViewController fileListViewController;
     public MainViewController(SpringFXMLLoader loader) {
         this.loader = loader;
     }
@@ -48,16 +49,28 @@ public class MainViewController {
 
         var res = loader.load("/fxml/FileListView.fxml");
         Scene scene = res.scene();
+
+
+        if(this.fileListViewController != null) {
+            fileListViewController.closeCurrentStage();
+        }
         FileListViewController controller = (FileListViewController) res.controller();
+        this.fileListViewController = controller;
 
         controller.setPattern(regexp);
         controller.setDirectoryPath(path);
 
 
         Stage stage = (Stage) pathInput.getScene().getWindow();
-        stage.setMinHeight(720);
-        stage.setMinWidth(1280);
-        stage.setScene(scene);
+        stage.close();
+
+        Stage newStage = new Stage();
+        newStage.setScene(scene);
+        newStage.setMinHeight(720);
+        newStage.setMinWidth(1280);
+        controller.setStage(newStage);
+        newStage.setTitle("File Explorer");
+        newStage.show();
     }
 
 
