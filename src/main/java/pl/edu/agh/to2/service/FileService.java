@@ -51,25 +51,28 @@ public class FileService {
         fileRepository.deleteAll();
         fileRepository.flush();
 
-
-        List<FileInfo> files = searchDirectory(root, pattern);
-        List<File> fileRecords = files.stream()
-                .map(f -> new File(
-                        root.getFileSystem().getPath(f.path()).getFileName().toString(),
-                        f.path(),
-                        f.size(),
-                        f.lastModified(),
-                        tryToHash(root.getFileSystem().getPath(f.path()))
-                ))
-                .toList();
+        List<Path> files = searchDirectory(root, pattern);
+        List<File> fileRecords = new ArrayList<>();
+        for (Path file : files) {
+            try {
+                fileRecords.add(new File(
+                        file.getFileName().toString(),
+                        file.toString(),
+                        Files.size(file),
+                        Files.getLastModifiedTime(file).toMillis(),
+                        tryToHash(file)
+                ));
+            } catch (IOException e) {
+                logger.error("Error loading file: {}", file, e);
+            }
+        }
 
         fileRepository.saveAll(fileRecords);
-
         logger.info("Files loaded from path: {}. Number of files: {}", root, fileRecords.size());
     }
 
-    private List<FileInfo> searchDirectory(Path path, Pattern pattern) {
-        List<FileInfo> fileList = new LinkedList<>();
+    private List<Path> searchDirectory(Path path, Pattern pattern) {
+        List<Path> fileList = new LinkedList<>();
         if (Files.notExists(path) || !Files.isDirectory(path)) {
             logger.info("Invalid folder path provided.");
             return fileList;
@@ -79,7 +82,7 @@ public class FileService {
         return fileList;
     }
 
-    private void search(List<FileInfo> resultsList, Path dir, Pattern pattern) {
+    private void search(List<Path> resultsList, Path dir, Pattern pattern) {
         try (Stream<Path> files = Files.list(dir)) {
             List<Path> filesList = files.toList();
             for (Path file : filesList) {
@@ -89,19 +92,14 @@ public class FileService {
         }
     }
 
-    private void handleFile(List<FileInfo> resultsList, Pattern pattern, Path file) throws IOException {
+    private void handleFile(List<Path> resultsList, Pattern pattern, Path file) throws IOException {
         if (Files.isDirectory(file)) {
             search(resultsList, file, pattern);
         } else {
             String fileName = file.getFileName().toString();
             if (pattern == null || pattern.matcher(fileName).matches()) {
                 logger.info("File path: {}", file);
-                FileInfo fileInfo = new FileInfo(
-                        file.toString(),
-                        Files.size(file),
-                        Files.getLastModifiedTime(file).toMillis()
-                );
-                resultsList.add(fileInfo);
+                resultsList.add(file);
             }
         }
     }
