@@ -59,9 +59,9 @@ Możemy również usunąć zaznaczone przez nas pliki.
 
 ### Podział pracy
 
-- **Tomasz Kurcoń** - dodanie okien dialogowych pozwalających na wybór ilości największych plików do wyświetlenia etc.
-- **Filip Bieńkowski** - ...
-- **Piotr Karamon** - dodanie znajdowania plików "wersji", widok dla action logów
+- **Tomasz Kurcoń** - dodanie okien dialogowych pozwalających na wybór ilości największych plików do wyświetlenia, wpisywania wyrażeń regularnych do filtrowania plików, ponownego wyboru ścieżki
+- **Filip Bieńkowski** - stworzenie ui dla znajdowania duplikatów oraz wyświetlania action logów,
+- **Piotr Karamon** - dodanie znajdowania plików "wersji", action logów, aktualizacja dokumentacji
 - **Jakub Zawistowski** - dodanie znajdowania duplikatów plików
 
 ### Stan projektu
