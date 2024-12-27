@@ -31,14 +31,14 @@
             <Label text="Regex Pattern:" GridPane.rowIndex="1" GridPane.columnIndex="0" alignment="CENTER_RIGHT"/>
             <VBox spacing="5" GridPane.rowIndex="1" GridPane.columnIndex="1">
                 <TextField fx:id="regexpInput" promptText="Optional: Enter regex pattern" style="-fx-min-width: 300px;"/>
-                <Label text="Use this to filter files by name, e.g., *.txt" style="-fx-font-size: 10px; -fx-text-fill: gray;"/>
+                <Label text="Use this to filter files by name, e.g. .*\.txt" style="-fx-font-size: 10px; -fx-text-fill: gray;"/>
             </VBox>
         </GridPane>
     </center>
 
     <bottom>
         <HBox spacing="10" alignment="CENTER" style="-fx-padding: 10;">
-            <Button text="Accept" onAction="#onAcceptClicked" style="-fx-min-width: 100px;"/>
+            <Button text="Accept" onAction="#onAcceptClicked"/>
         </HBox>
     </bottom>
 
