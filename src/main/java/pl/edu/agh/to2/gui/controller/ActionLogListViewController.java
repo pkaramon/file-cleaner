@@ -6,7 +6,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.Pane;
 import org.springframework.stereotype.Component;
-import pl.edu.agh.to2.gui.task.TaskExecutor;
+import pl.edu.agh.to2.gui.utils.TaskExecutor;
 import pl.edu.agh.to2.model.ActionLog;
 import pl.edu.agh.to2.service.ActionLogService;
 
