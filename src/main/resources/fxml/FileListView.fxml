@@ -20,6 +20,10 @@
                 <Button text="Show logs" onAction="#onShowLogsClicked"/>
                 <Button text="Find Duplicates" onAction="#onFindDuplicatesClicked"/>
                 <Button text="Find versions" onAction="#onFindVersionsClicked"/>
+
+                <VBox spacing="20">
+                    <Button text="Select new path" onAction="#onSelectNewPathClicked"/>
+                </VBox>
             </VBox>
         </left>
 
