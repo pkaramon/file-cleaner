@@ -12,7 +12,7 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.springframework.stereotype.Component;
-import pl.edu.agh.to2.gui.task.TaskExecutor;
+import pl.edu.agh.to2.gui.utils.TaskExecutor;
 import pl.edu.agh.to2.gui.utils.SpringFXMLLoader;
 import pl.edu.agh.to2.model.File;
 import pl.edu.agh.to2.service.FileService;

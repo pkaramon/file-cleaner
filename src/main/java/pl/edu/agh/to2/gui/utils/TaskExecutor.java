@@ -1,4 +1,4 @@
-package pl.edu.agh.to2.gui.task;
+package pl.edu.agh.to2.gui.utils;
 
 import javafx.concurrent.Task;
 import javafx.scene.control.Alert;
@@ -12,6 +12,7 @@ import java.util.function.Consumer;
 public class TaskExecutor {
     private final Pane rootPane;
     private final ProgressIndicator progressIndicator;
+
     // WARNING: Does not work with BorderPane
     // If you need to use BorderPane, surround it with StackPane
     public TaskExecutor(Pane rootPane) {
@@ -71,5 +72,4 @@ public class TaskExecutor {
     public interface ThrowingSupplier<T> {
         T get() throws Exception;
     }
-
 }
