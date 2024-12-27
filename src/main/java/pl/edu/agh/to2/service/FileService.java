@@ -158,10 +158,10 @@ public class FileService {
     public void archiveFiles(List<File> files, Path zipFilePath) throws IOException {
         try (OutputStream outStream = Files.newOutputStream(zipFilePath);
              ZipOutputStream zipOut = new ZipOutputStream(outStream)) {
-            Map<String, Integer> basenameToCount = new HashMap<>();
+            Map<String, Integer> filenameToCount = new HashMap<>();
 
             for (File file : files) {
-                zipFile(file, zipOut, zipFilePath.getFileSystem(), basenameToCount);
+                zipFile(file, zipOut, zipFilePath.getFileSystem(), filenameToCount);
             }
             logger.info("Files archived to: {}", zipFilePath);
             ActionLog actionLog = new ActionLog(
@@ -184,7 +184,7 @@ public class FileService {
         if (basenameToCount.containsKey(entryName)) {
             int count = basenameToCount.get(entryName) + 1;
             entryName =
-                    "%s_v%d.%s".formatted(getWithoutExtension(file.getName()), count, getExtension(file.getName()));
+                    "%s(%d).%s".formatted(getWithoutExtension(file.getName()), count, getExtension(file.getName()));
             basenameToCount.put(file.getName(), count);
         } else {
             basenameToCount.put(file.getName(), 1);
