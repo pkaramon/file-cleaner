@@ -293,8 +293,8 @@ class FileServiceTest {
         var dir = fs.getPath("Docs/");
         setupDirectoryWithContents(
                 dir,
-                List.of("a.txt", "b.txt", "c.txt", "nested/a.txt"),
-                List.of("a", "b", "c", "a")
+                List.of("a.txt", "b.txt", "c.txt", "nested/a.txt", "a(1).txt"),
+                List.of("a", "b", "c", "a", "a")
         );
 
         Files.createDirectory(fs.getPath("Archives/"));
@@ -316,14 +316,14 @@ class FileServiceTest {
             while ((entry = zis.getNextEntry()) != null) {
                 fileCount++;
                 switch (entry.getName()) {
-                    case "a.txt", "a_v2.txt" -> assertEquals("a", new String(zis.readAllBytes()));
+                    case "a.txt", "a(1).txt", "a(2).txt" -> assertEquals("a", new String(zis.readAllBytes()));
                     case "b.txt" -> assertEquals("b", new String(zis.readAllBytes()));
                     case "c.txt" -> assertEquals("c", new String(zis.readAllBytes()));
                     default -> fail("Unexpected file in ZIP: " + entry.getName());
                 }
                 zis.closeEntry();
             }
-            assertEquals(4, fileCount, "Incorrect number of files in the ZIP archive.");
+            assertEquals(5, fileCount, "Incorrect number of files in the ZIP archive.");
         }
     }
 
