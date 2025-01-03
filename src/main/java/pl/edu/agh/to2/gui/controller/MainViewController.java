@@ -7,12 +7,15 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import org.springframework.stereotype.Component;
 import pl.edu.agh.to2.gui.utils.SpringFXMLLoader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
 @Component
 public class MainViewController {
 
+    private static final Logger logger = LoggerFactory.getLogger(MainViewController.class);
     private final SpringFXMLLoader loader;
     @FXML
     private TextField pathInput;
@@ -42,7 +45,7 @@ public class MainViewController {
         String regexp = regexpInput.getText();
         if (path == null || path.trim().isEmpty()) {
             pathInput.setStyle("-fx-border-color: red; -fx-border-width: 2;");
-            System.out.println("Path is empty!");
+            logger.error("Path is empty");
             return;
         }
         pathInput.setStyle("");

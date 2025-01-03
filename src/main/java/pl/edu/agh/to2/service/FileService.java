@@ -89,6 +89,7 @@ public class FileService {
                 handleFile(resultsList, pattern, file);
             }
         } catch (IOException ignored) {
+            // We ignore the exception because we don't want to interrupt the program's execution in case of errors while listing files in the directory
         }
     }
 
