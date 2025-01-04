@@ -10,7 +10,6 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.Pane;
-import javafx.stage.DirectoryChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.springframework.stereotype.Component;
@@ -154,7 +153,7 @@ public class FileListViewController {
 
 
     private Optional<Integer> askUserForMaxDistance() {
-        Optional<Integer> result = Optional.empty();
+        Optional<Integer> result;
         TextInputDialog dialog = new TextInputDialog("3");
         dialog.setTitle("Select max edit distance");
         dialog.setContentText("Please enter a max distance:");
@@ -171,7 +170,7 @@ public class FileListViewController {
     }
 
     private Optional<Integer> askForNumberOfLargestFiles() {
-        Optional<Integer> result = Optional.empty();
+        Optional<Integer> result;
         TextInputDialog dialog = new TextInputDialog("10");
         dialog.setTitle("Select number of largest files");
         dialog.setContentText("Please enter a number:");
