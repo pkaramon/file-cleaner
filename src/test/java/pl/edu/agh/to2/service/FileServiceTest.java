@@ -15,6 +15,7 @@ import org.springframework.test.context.ActiveProfiles;
 import pl.edu.agh.to2.model.File;
 import pl.edu.agh.to2.repository.ActionLogRepository;
 import pl.edu.agh.to2.repository.FileRepository;
+import pl.edu.agh.to2.repository.FileSizeStats;
 import pl.edu.agh.to2.types.ActionType;
 
 import java.io.IOException;
@@ -367,6 +368,38 @@ class FileServiceTest {
 
         assertTrue(versionFileNames.contains(Set.of("ver1.txt", "ver2.txt", "ver3.txt", "ver10.txt", "ver_9.txt")));
         assertTrue(versionFileNames.contains(Set.of("hello.txt", "hello2.txt")));
+    }
+
+
+    @Test
+    void testGetFileSizeStats_WhenNoFiles_ReturnsEmpty() {
+        // when
+        var stats = fileService.getFileSizeStats();
+
+        // then
+        assertTrue(stats.isEmpty());
+    }
+
+    @Test
+    void testGetFileSizeStats_Average_Std_Min_Max_Count() throws IOException {
+        // given
+        var dir = fs.getPath("Docs/");
+        setupDirectoryWithContents(
+                dir,
+                List.of("a.txt", "b.txt", "c.txt"),
+                List.of("a".repeat(100), "b".repeat(200), "c".repeat(300))
+        );
+        fileService.loadFromPath(dir, defaultPattern);
+
+        // when
+        FileSizeStats stats = fileService.getFileSizeStats().orElseThrow();
+
+        // then
+        assertEquals(81.65, stats.std(), 0.01);
+        assertEquals(200, stats.average(), 1e-6);
+        assertEquals(100, stats.min(), 1e-6);
+        assertEquals(300, stats.max(), 1e-6);
+        assertEquals(3, stats.count());
     }
 
 }

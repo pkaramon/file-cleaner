@@ -31,7 +31,7 @@ public interface FileRepository extends JpaRepository<File, Long> {
 
     @Query("SELECT f FROM File f WHERE (f.hash, f.size) in " +
             "(SELECT f.hash, f.size FROM File f GROUP BY f.hash, f.size HAVING COUNT(f) > 1) " +
-            "ORDER BY f.id" )
+            "ORDER BY f.id")
     List<File> findDuplicates();
 
     @Query("SELECT levenshtein(f.name, g.name), f, g " +
@@ -48,5 +48,15 @@ public interface FileRepository extends JpaRepository<File, Long> {
                 .toList();
     }
 
+    @Query("SELECT AVG(f.size) FROM File f")
+    Optional<Double> findAverageFileSize();
 
+    @Query("SELECT STDDEV_POP(f.size) FROM File f")
+    Optional<Double> findFileSizeStd();
+
+    @Query("SELECT new pl.edu.agh.to2.repository.FileSizeStats(" +
+            "COALESCE(AVG(f.size), 0), COALESCE(STDDEV_POP(f.size), 0), " +
+            "COALESCE(MIN(f.size), 0), COALESCE(MAX(f.size), 0), " +
+            "COALESCE(COUNT(f), 0)) FROM File f")
+    FileSizeStats findFileSizeStats();
 }

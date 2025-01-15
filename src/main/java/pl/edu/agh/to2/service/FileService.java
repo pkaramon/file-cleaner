@@ -9,6 +9,7 @@ import pl.edu.agh.to2.model.File;
 import pl.edu.agh.to2.repository.ActionLogRepository;
 import pl.edu.agh.to2.repository.EditDistanceResult;
 import pl.edu.agh.to2.repository.FileRepository;
+import pl.edu.agh.to2.repository.FileSizeStats;
 import pl.edu.agh.to2.types.ActionType;
 
 import java.io.IOException;
@@ -207,12 +208,12 @@ public class FileService {
         }
     }
 
-    public String getWithoutExtension(String fileName) {
+    private String getWithoutExtension(String fileName) {
         int dotIndex = fileName.lastIndexOf('.');
         return (dotIndex == -1) ? fileName : fileName.substring(0, dotIndex);
     }
 
-    public String getExtension(String fileName) {
+    private String getExtension(String fileName) {
         int dotIndex = fileName.lastIndexOf('.');
         return (dotIndex == -1) ? "" : fileName.substring(dotIndex + 1);
     }
@@ -251,4 +252,10 @@ public class FileService {
                 .toList()
         );
     }
+
+    public Optional<FileSizeStats> getFileSizeStats() {
+        FileSizeStats stats = fileRepository.findFileSizeStats();
+        return stats.count() == 0 ? Optional.empty() : Optional.of(stats);
+    }
+
 }

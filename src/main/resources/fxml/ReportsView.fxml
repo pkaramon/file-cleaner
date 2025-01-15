@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Text?>
+<StackPane
+        xmlns:fx="http://javafx.com/fxml"
+        xmlns="http://javafx.com/javafx"
+        fx:controller="pl.edu.agh.to2.gui.controller.ReportsViewController"
+        fx:id="rootPane"
+>
+    <BorderPane>
+        <center>
+            <VBox>
+                <Text text="Reports" style="-fx-font-size: 24px;"/>
+                <Label fx:id="nothingFoundLabel" text="No data found." visible="false"/>
+                <Label fx:id="countLabel"/>
+                <Label fx:id="averageLabel"/>
+                <Label fx:id="maxLabel"/>
+                <Label fx:id="minLabel"/>
+                <Label fx:id="stdLabel"/>
+            </VBox>
+        </center>
+    </BorderPane>
+</StackPane>
