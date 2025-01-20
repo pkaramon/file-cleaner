@@ -16,6 +16,7 @@ import pl.edu.agh.to2.service.FileService;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static javafx.collections.FXCollections.observableArrayList;
 
@@ -31,6 +32,10 @@ public class GroupFilesViewController {
     @FXML
     private Pane rootPane;
 
+    private TextField searchField;
+    private Button searchButton;
+    private Button resetButton;
+
     public GroupFilesViewController(FileService fileService) {
         this.fileService = fileService;
     }
@@ -38,6 +43,13 @@ public class GroupFilesViewController {
     @FXML
     private void initialize() {
         taskExecutor = new TaskExecutor(rootPane);
+
+        searchField = new TextField();
+        searchField.setPromptText("Search by file name...");
+        searchButton = new Button("Search");
+        resetButton = new Button("Reset");
+        searchButton.setOnAction(event -> performSearch());
+        resetButton.setOnAction(event -> resetSearch());
     }
 
     public void show(Function<FileService, List<List<File>>> getFileGroups) {
@@ -56,11 +68,18 @@ public class GroupFilesViewController {
         }
 
         VBox layout = new VBox(10);
+
+        HBox searchLayout = new HBox(10);
+        searchLayout.setStyle("-fx-padding: 10;");
+        searchLayout.getChildren().addAll(new Label("Search:"), searchField, searchButton, resetButton);
+
+        layout.getChildren().add(searchLayout);
+
         for (List<File> group : groups) {
             List<FileRow> fileRows = group
                     .stream()
                     .map(FileRow::new)
-                    .toList();
+                    .collect(Collectors.toList());
 
             TableView<FileRow> tableView = createTableView(observableArrayList(fileRows));
             HBox buttonLayout = displayButtons(group, tableView);
@@ -70,6 +89,56 @@ public class GroupFilesViewController {
         }
         scrollPane.setContent(layout);
     }
+
+private void performSearch() {
+    String searchText = searchField.getText().toLowerCase().trim();
+    if (searchText != null && !searchText.isEmpty()) {
+        taskExecutor.run(() -> {
+            List<List<File>> allGroups = this.getFileGroups.apply(fileService);
+            List<List<File>> filteredGroups = allGroups.stream()
+                    .map(group -> group.stream()
+                            .filter(file -> {
+                                String fileName = Path.of(file.getPath()).getFileName().toString().toLowerCase();
+                                return fileName.contains(searchText);
+                            })
+                            .collect(Collectors.toList()))
+                    .collect(Collectors.toList());
+            return filteredGroups;
+        }, filteredGroups -> {
+            displayGroupsWithSearch(filteredGroups);
+        });
+    }
+}
+
+
+    private void resetSearch() {
+        searchField.clear();
+        refresh();
+    }
+
+private void displayGroupsWithSearch(List<List<File>> filteredGroups) {
+    VBox layout = new VBox(10);
+
+    HBox searchLayout = new HBox(10);
+    searchLayout.setStyle("-fx-padding: 10;");
+    searchLayout.getChildren().addAll(new Label("Search:"), searchField, searchButton, resetButton);
+
+    layout.getChildren().add(searchLayout);
+
+    for (List<File> group : filteredGroups) {
+        List<FileRow> fileRows = group
+                .stream()
+                .map(FileRow::new)
+                .collect(Collectors.toList());
+
+        TableView<FileRow> tableView = createTableView(observableArrayList(fileRows));
+        HBox buttonLayout = displayButtons(group, tableView);
+        VBox tableLayout = new VBox(10, buttonLayout, tableView);
+
+        layout.getChildren().add(tableLayout);
+    }
+    scrollPane.setContent(layout);
+}
 
     private HBox displayButtons(List<File> files, TableView<FileRow> tableView) {
         Button deleteAllBtn = new Button("Delete All");
@@ -131,6 +200,11 @@ public class GroupFilesViewController {
 
         tableView.setItems(rows);
         tableView.setMinWidth(600);
+
+        if (rows.isEmpty()) {
+            Label noContentLabel = new Label("No content in table");
+            tableView.setPlaceholder(noContentLabel);
+        }
 
         return tableView;
     }

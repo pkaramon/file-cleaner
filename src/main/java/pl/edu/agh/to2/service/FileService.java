@@ -34,7 +34,6 @@ public class FileService {
     private final ActionLogRepository actionLogRepository;
     private final FileHasher fileHasher;
 
-
     public FileService(FileRepository fileRepository,
                        Clock clock,
                        ActionLogRepository actionLogRepository,
@@ -44,7 +43,6 @@ public class FileService {
         this.actionLogRepository = actionLogRepository;
         this.fileHasher = fileHasher;
     }
-
 
     @Transactional
     public void loadFromPath(Path root, Pattern pattern) {
@@ -78,7 +76,6 @@ public class FileService {
             return fileList;
         }
         search(fileList, path, pattern);
-
         return fileList;
     }
 
@@ -105,7 +102,6 @@ public class FileService {
         }
     }
 
-
     private String tryToHash(Path path) {
         try {
             return fileHasher.hash(path);
@@ -122,7 +118,6 @@ public class FileService {
     public List<File> findLargestFilesIn(Path path, int n) {
         return fileRepository.findLargestFilesIn(String.valueOf(path), n);
     }
-
 
     public List<List<File>> findDuplicatedGroups() {
         List<File> duplicates = fileRepository.findDuplicates();
@@ -151,7 +146,6 @@ public class FileService {
 
         actionLogRepository.save(actionLog);
     }
-
 
     @Transactional
     public void archiveFiles(List<File> files, Path zipFilePath) throws IOException {
@@ -217,7 +211,6 @@ public class FileService {
         return (dotIndex == -1) ? "" : fileName.substring(dotIndex + 1);
     }
 
-
     public List<List<File>> findVersions(int maxDistance) {
         List<EditDistanceResult> similarFiles = fileRepository.findSimilarFileNames(maxDistance);
         List<Set<File>> versionGroups = new ArrayList<>();
@@ -250,5 +243,8 @@ public class FileService {
                 .map(ArrayList::new)
                 .toList()
         );
+    }
+        public List<File> findFilesByName(String name) {
+        return fileRepository.findByPathContaining(name);
     }
 }

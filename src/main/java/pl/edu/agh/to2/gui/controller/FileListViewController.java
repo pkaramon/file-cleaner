@@ -15,6 +15,8 @@ import pl.edu.agh.to2.command.DeleteActionCommand;
 import pl.edu.agh.to2.gui.utils.TaskExecutor;
 import pl.edu.agh.to2.gui.utils.SpringFXMLLoader;
 import pl.edu.agh.to2.model.File;
+import java.util.stream.Collectors;
+
 import pl.edu.agh.to2.repository.ActionLogRepository;
 import pl.edu.agh.to2.service.FileService;
 
@@ -26,6 +28,7 @@ import java.util.regex.Pattern;
 
 @Component
 public class FileListViewController {
+
     private final SpringFXMLLoader loader;
     private final FileService fileService;
     private final ActionLogRepository actionLogRepository;
@@ -38,12 +41,16 @@ public class FileListViewController {
 
     @FXML
     private Pane rootPane;
+
     @FXML
     private TableView<FileRow> fileTableView;
+
     @FXML
     private TableColumn<FileRow, String> pathColumn;
+
     @FXML
     private TableColumn<FileRow, String> sizeColumn;
+
     @FXML
     private TableColumn<FileRow, String> hashColumn;
 
@@ -52,6 +59,9 @@ public class FileListViewController {
 
     @FXML
     private Button redoButton;
+
+    @FXML
+    private TextField searchField;
 
     private String directoryPath;
 
@@ -63,7 +73,6 @@ public class FileListViewController {
         this.actionLogRepository = actionLogRepository;
         this.clock = clock;
     }
-
 
     @FXML
     public void initialize() {
@@ -189,7 +198,6 @@ public class FileListViewController {
         stage.close();
     }
 
-
     private Optional<Integer> askUserForMaxDistance() {
         Optional<Integer> result;
         TextInputDialog dialog = new TextInputDialog("3");
@@ -224,6 +232,7 @@ public class FileListViewController {
 
         return result;
     }
+
     @FXML
     private void onShowLogsClicked() {
         var res = loader.load("/fxml/ActionLogListView.fxml");
@@ -256,5 +265,28 @@ public class FileListViewController {
         fileTableView.setItems(rows);
     }
 
+@FXML
+private void onSearchClicked() {
+    String searchText = searchField.getText().toLowerCase().trim();
+    if (searchText != null && !searchText.isEmpty()) {
+        taskExecutor.run(() -> {
 
+            List<File> allFiles = fileService.findFilesInPath(Path.of(directoryPath));
+            
+            List<File> filteredFiles = allFiles.stream()
+                    .filter(file -> {
+                        String fileName = Path.of(file.getPath()).getFileName().toString().toLowerCase();
+                        return fileName.contains(searchText);
+                    })
+                    .collect(Collectors.toList());
+            
+            return filteredFiles;
+        }, filteredFiles -> {
+            updateTable(filteredFiles);
+        });
+    } else {
+        updateFileList();
+    }
+    searchField.clear();
+}
 }
