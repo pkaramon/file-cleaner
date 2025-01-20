@@ -9,6 +9,9 @@ import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.Pane;
 import javafx.util.Duration;
 import org.springframework.stereotype.Component;
@@ -21,6 +24,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -29,7 +33,15 @@ import java.util.stream.Stream;
 public class ReportsViewController {
     private final FileService fileService;
     private final Timeline debounceTimeline = new Timeline();
+
+    @FXML
+    private TableView<ExtensionCountRow> tableView;
+    @FXML
+    private TableColumn<ExtensionCountRow, String> extensionColumn;
+    @FXML
+    private TableColumn<ExtensionCountRow, Long> countColumn;
     private TaskExecutor taskExecutor;
+
     @FXML
     private Label nothingFoundLabel;
 
@@ -68,7 +80,6 @@ public class ReportsViewController {
         this.fileService = fileService;
     }
 
-
     @FXML
     private void initialize() {
         taskExecutor = new TaskExecutor(rootPane);
@@ -78,6 +89,10 @@ public class ReportsViewController {
             hist.setMaxHeight(400);
             hist.layout();
         });
+
+        rootPane.setMaxHeight(800);
+        extensionColumn.setCellValueFactory(new PropertyValueFactory<>("extension"));
+        countColumn.setCellValueFactory(new PropertyValueFactory<>("count"));
     }
 
     private void initializeSlider() {
@@ -94,10 +109,7 @@ public class ReportsViewController {
             // Changing the histogram immediately produces visual glitches and is resource intensive.
             debounceTimeline.stop();
             debounceTimeline.getKeyFrames().setAll(
-                    new KeyFrame(Duration.millis(300), event -> {
-                        taskExecutor.run(() -> fileService.getFileSizeHistogram(newValue.intValue()), this::displayFileSizeHistogram);
-                        taskExecutor.run(() -> fileService.getLastModifiedHistogram(newValue.intValue()), this::displayLastModifiedHistogram);
-                    })
+                    new KeyFrame(Duration.millis(300), event -> showHistograms(newValue.intValue()))
             );
             debounceTimeline.playFromStart();
         });
@@ -106,10 +118,14 @@ public class ReportsViewController {
 
     public void show() {
         taskExecutor.run(fileService::getFileSizeStats, this::displayStats);
-//        taskExecutor.run(() -> fileService.getFileSizeHistogram((int) numberOfBucketsSlider.getValue()), this::displayFileSizeHistogram);
-
+        taskExecutor.run(fileService::getFileCountsByExtension, this::displayExtensionCounts);
+        showHistograms((numberOfBucketsSlider.valueProperty().intValue()));
     }
 
+    private void showHistograms(int bucketSize) {
+        taskExecutor.run(() -> fileService.getFileSizeHistogram(bucketSize), this::displayFileSizeHistogram);
+        taskExecutor.run(() -> fileService.getLastModifiedHistogram(bucketSize), this::displayLastModifiedHistogram);
+    }
 
     private void displayStats(Optional<FileSizeStats> fileSizeStats) {
         if (fileSizeStats.isPresent()) {
@@ -126,6 +142,9 @@ public class ReportsViewController {
         }
     }
 
+    private void displayFileSizeHistogram(Optional<Histogram> hist) {
+        displayHistogram(hist, sizeHist, "File Size Histogram", this::bytesToHumanReadable);
+    }
 
     private String bytesToHumanReadable(long bytes) {
         if (bytes < 1024) return bytes + " B";
@@ -135,15 +154,9 @@ public class ReportsViewController {
         return "%.1f %sB".formatted(bytes / Math.pow(1024, exp), unit);
     }
 
-
-    private void displayFileSizeHistogram(Optional<Histogram> hist) {
-        displayHistogram(hist, sizeHist, "File Size Histogram", this::bytesToHumanReadable);
-    }
-
     private void displayLastModifiedHistogram(Optional<Histogram> hist) {
         displayHistogram(hist, lastModifiedHist, "Last Modified Histogram", this::millisToDate);
     }
-
 
     private void displayHistogram(Optional<Histogram> hist,
                                   BarChart<String, Number> chart,
@@ -177,6 +190,14 @@ public class ReportsViewController {
         chart.getData().clear();
         chart.getData().add(series);
         chart.layout();
+    }
+
+
+    private void displayExtensionCounts(Map<String, Long> counts) {
+        tableView.getItems().clear();
+        tableView.getItems().addAll(counts.entrySet().stream()
+                .map(e -> new ExtensionCountRow(e.getKey().isEmpty() ? "NO EXT" : e.getKey(), e.getValue()))
+                .toList());
     }
 
     private String millisToDate(long millis) {

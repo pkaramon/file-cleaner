@@ -28,6 +28,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -375,7 +376,7 @@ class FileServiceTest {
     @Test
     void testGetFileSizeStats_WhenNoFiles_ReturnsEmpty() {
         // when
-        var stats = fileService.getFileSizeStats();
+        Optional<FileSizeStats> stats = fileService.getFileSizeStats();
 
         // then
         assertTrue(stats.isEmpty());
@@ -406,7 +407,7 @@ class FileServiceTest {
     @Test
     void testGetFileSizeHistogram_NoFiles_ReturnsEmpty() {
         // when
-        var histogram = fileService.getFileSizeHistogram(3);
+        Optional<Histogram> histogram = fileService.getFileSizeHistogram(3);
 
         // then
         assertTrue(histogram.isEmpty());
@@ -431,7 +432,7 @@ class FileServiceTest {
         fileService.loadFromPath(dir, defaultPattern);
 
         // when
-        var histogram = fileService.getFileSizeHistogram(3).orElseThrow();
+        Histogram histogram = fileService.getFileSizeHistogram(3).orElseThrow();
 
         // then
         assertEquals(20, histogram.min());
@@ -446,7 +447,7 @@ class FileServiceTest {
     @Test
     void testGetLastModifiedHistogram_NoFiles_ReturnsEmpty() {
         // when
-        var histogram = fileService.getLastModifiedHistogram(3);
+        Optional<Histogram> histogram = fileService.getLastModifiedHistogram(3);
 
         // then
         assertTrue(histogram.isEmpty());
@@ -467,7 +468,7 @@ class FileServiceTest {
         fileService.loadFromPath(dir, defaultPattern);
 
         // when
-        var histogram = fileService.getLastModifiedHistogram(3).orElseThrow();
+        Histogram histogram = fileService.getLastModifiedHistogram(3).orElseThrow();
 
         // then
         assertEquals(1, histogram.min());
@@ -477,6 +478,21 @@ class FileServiceTest {
         assertEquals(3, histogram.buckets().get(0));
         assertEquals(3, histogram.buckets().get(1));
         assertEquals(4, histogram.buckets().get(2));
+    }
 
+    @Test
+    void testGetFileCountsByExtension() throws IOException {
+        // given
+        setupDirectory(fs.getPath("Docs/"), "jkja.txt", "b.txt", "c.doc", "d.doc", "e.docx");
+        fileService.loadFromPath(fs.getPath("Docs/"), defaultPattern);
+
+        // when
+        var counts = fileService.getFileCountsByExtension();
+
+        // then
+        assertEquals(3, counts.size());
+        assertEquals(2, counts.get("txt"));
+        assertEquals(2, counts.get("doc"));
+        assertEquals(1, counts.get("docx"));
     }
 }

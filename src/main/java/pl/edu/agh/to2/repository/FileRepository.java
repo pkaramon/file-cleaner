@@ -8,7 +8,9 @@ import org.springframework.stereotype.Repository;
 import pl.edu.agh.to2.model.File;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Repository
 public interface FileRepository extends JpaRepository<File, Long> {
@@ -48,11 +50,6 @@ public interface FileRepository extends JpaRepository<File, Long> {
                 .toList();
     }
 
-    @Query("SELECT AVG(f.size) FROM File f")
-    Optional<Double> findAverageFileSize();
-
-    @Query("SELECT STDDEV_POP(f.size) FROM File f")
-    Optional<Double> findFileSizeStd();
 
     @Query("SELECT new pl.edu.agh.to2.repository.FileSizeStats(" +
             "COALESCE(AVG(f.size), 0), COALESCE(STDDEV_POP(f.size), 0), " +
@@ -65,5 +62,27 @@ public interface FileRepository extends JpaRepository<File, Long> {
 
     @Query("SELECT f.lastModified FROM File f")
     List<Long> findAllLastModifiedInMilliseconds();
+
+    @Query(value = "SELECT " +
+            "CASE " +
+            "  WHEN f.name NOT LIKE '%.%' THEN '' " +
+            "  ELSE split_part(f.name, '.', -1) " +
+            "END AS extension, " +
+            "COUNT(f.id) " +
+            "FROM File f " +
+            "GROUP BY " +
+            "CASE " +
+            "  WHEN f.name NOT LIKE '%.%' THEN '' " +
+            "  ELSE split_part(f.name, '.', -1) " +
+            "END",
+            nativeQuery = true
+    )
+    List<Object[]> _findFileCountsByExtension();
+
+
+    default Map<String, Long> findFileCountsByExtension() {
+        return _findFileCountsByExtension().stream()
+                .collect(Collectors.toMap(o -> (String) o[0], o -> (Long) o[1]));
+    }
 }
 

@@ -94,7 +94,7 @@ public class FileService {
         }
     }
 
-    private void handleFile(List<Path> resultsList, Pattern pattern, Path file) throws IOException {
+    private void handleFile(List<Path> resultsList, Pattern pattern, Path file) {
         if (Files.isDirectory(file)) {
             search(resultsList, file, pattern);
         } else {
@@ -280,6 +280,10 @@ public class FileService {
             buckets.set(bucketIndex, buckets.get(bucketIndex) + 1);
         }
         return Optional.of(new Histogram(min, max, buckets));
+    }
+
+    public Map<String, Long> getFileCountsByExtension() {
+        return fileRepository.findFileCountsByExtension();
     }
 }
 

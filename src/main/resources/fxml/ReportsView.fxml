@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.chart.*?>
+<?import javafx.scene.control.cell.PropertyValueFactory?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Text?>
@@ -12,42 +13,60 @@
 >
 
     <ScrollPane>
-        <VBox style="-fx-padding: 20; ">
-            <Text text="Reports" style="-fx-font-size: 24px;"/>
-        </VBox>
-        <VBox style="-fx-padding: 20">
-            <Label fx:id="nothingFoundLabel" text="No data found." visible="false"/>
-            <Label fx:id="countLabel"/>
-            <Label fx:id="averageLabel"/>
-            <Label fx:id="maxLabel"/>
-            <Label fx:id="minLabel"/>
-            <Label fx:id="stdLabel"/>
-            <HBox spacing="20" style="-fx-padding: 20; -fx-alignment: center;">
-                <Label text="Number of buckets:" fx:id="sliderLabel"/>
-                <Slider fx:id="numberOfBucketsSlider"/>
-            </HBox>
+        <VBox spacing="20">
+            <VBox style="-fx-padding: 20; ">
+                <Text text="Reports" style="-fx-font-size: 24px;"/>
+            </VBox>
+            <VBox style="-fx-padding: 20">
+                <Label fx:id="nothingFoundLabel" text="No data found." visible="false"/>
+                <Label fx:id="countLabel"/>
+                <Label fx:id="averageLabel"/>
+                <Label fx:id="maxLabel"/>
+                <Label fx:id="minLabel"/>
+                <Label fx:id="stdLabel"/>
+
+                <HBox spacing="20" style="-fx-padding: 20; -fx-alignment: center;">
+                    <Label text="Number of buckets:" fx:id="sliderLabel"/>
+                    <Slider fx:id="numberOfBucketsSlider"/>
+                </HBox>
 
 
-            <HBox spacing="20" style="-fx-padding: 20; -fx-alignment: center;">
-                <BarChart fx:id="sizeHist">
-                    <xAxis>
-                        <CategoryAxis label="Range"/>
-                    </xAxis>
-                    <yAxis>
-                        <NumberAxis label="Frequency"/>
-                    </yAxis>
-                </BarChart>
+                <HBox spacing="20" style="-fx-padding: 20; -fx-alignment: center;">
+                    <BarChart fx:id="sizeHist">
+                        <xAxis>
+                            <CategoryAxis label="Range"/>
+                        </xAxis>
+                        <yAxis>
+                            <NumberAxis label="Frequency"/>
+                        </yAxis>
+                    </BarChart>
 
-                <BarChart fx:id="lastModifiedHist">
-                    <xAxis>
-                        <CategoryAxis label="Range"/>
-                    </xAxis>
-                    <yAxis>
-                        <NumberAxis label="Frequency"/>
-                    </yAxis>
-                </BarChart>
-            </HBox>
+                    <BarChart fx:id="lastModifiedHist">
+                        <xAxis>
+                            <CategoryAxis label="Range"/>
+                        </xAxis>
+                        <yAxis>
+                            <NumberAxis label="Frequency"/>
+                        </yAxis>
+                    </BarChart>
+                </HBox>
 
+                <TableView fx:id="tableView" style="-fx-padding: 10;">
+                    <columns>
+                        <TableColumn text="Extension" prefWidth="180" fx:id="extensionColumn">
+                            <cellValueFactory>
+                                <PropertyValueFactory property="date"/>
+                            </cellValueFactory>
+                        </TableColumn>
+
+                        <TableColumn text="Count" prefWidth="100" fx:id="countColumn">
+                            <cellValueFactory>
+                                <PropertyValueFactory property="desc"/>
+                            </cellValueFactory>
+                        </TableColumn>
+                    </columns>
+                </TableView>
+            </VBox>
         </VBox>
     </ScrollPane>
 </StackPane>
