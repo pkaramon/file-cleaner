@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.chart.*?>
 <?import javafx.scene.control.*?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.StackPane?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Text?>
 <StackPane
         xmlns:fx="http://javafx.com/fxml"
@@ -11,17 +10,45 @@
         fx:controller="pl.edu.agh.to2.gui.controller.ReportsViewController"
         fx:id="rootPane"
 >
-    <BorderPane>
-        <center>
-            <VBox>
-                <Text text="Reports" style="-fx-font-size: 24px;"/>
-                <Label fx:id="nothingFoundLabel" text="No data found." visible="false"/>
-                <Label fx:id="countLabel"/>
-                <Label fx:id="averageLabel"/>
-                <Label fx:id="maxLabel"/>
-                <Label fx:id="minLabel"/>
-                <Label fx:id="stdLabel"/>
-            </VBox>
-        </center>
-    </BorderPane>
+
+    <ScrollPane>
+        <VBox style="-fx-padding: 20; ">
+            <Text text="Reports" style="-fx-font-size: 24px;"/>
+        </VBox>
+        <VBox style="-fx-padding: 20">
+            <Label fx:id="nothingFoundLabel" text="No data found." visible="false"/>
+            <Label fx:id="countLabel"/>
+            <Label fx:id="averageLabel"/>
+            <Label fx:id="maxLabel"/>
+            <Label fx:id="minLabel"/>
+            <Label fx:id="stdLabel"/>
+            <HBox spacing="20" style="-fx-padding: 20; -fx-alignment: center;">
+                <Label text="Number of buckets:" fx:id="sliderLabel"/>
+                <Slider fx:id="numberOfBucketsSlider"/>
+            </HBox>
+
+
+            <HBox spacing="20" style="-fx-padding: 20; -fx-alignment: center;">
+                <BarChart fx:id="sizeHist">
+                    <xAxis>
+                        <CategoryAxis label="Range"/>
+                    </xAxis>
+                    <yAxis>
+                        <NumberAxis label="Frequency"/>
+                    </yAxis>
+                </BarChart>
+
+                <BarChart fx:id="lastModifiedHist">
+                    <xAxis>
+                        <CategoryAxis label="Range"/>
+                    </xAxis>
+                    <yAxis>
+                        <NumberAxis label="Frequency"/>
+                    </yAxis>
+                </BarChart>
+            </HBox>
+
+        </VBox>
+    </ScrollPane>
 </StackPane>
+

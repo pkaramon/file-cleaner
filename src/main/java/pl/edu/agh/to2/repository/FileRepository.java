@@ -59,4 +59,11 @@ public interface FileRepository extends JpaRepository<File, Long> {
             "COALESCE(MIN(f.size), 0), COALESCE(MAX(f.size), 0), " +
             "COALESCE(COUNT(f), 0)) FROM File f")
     FileSizeStats findFileSizeStats();
+
+    @Query("SELECT f.size FROM File f")
+    List<Long> findAllSizes();
+
+    @Query("SELECT f.lastModified FROM File f")
+    List<Long> findAllLastModifiedInMilliseconds();
 }
+

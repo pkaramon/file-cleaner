@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -402,4 +403,80 @@ class FileServiceTest {
         assertEquals(3, stats.count());
     }
 
+    @Test
+    void testGetFileSizeHistogram_NoFiles_ReturnsEmpty() {
+        // when
+        var histogram = fileService.getFileSizeHistogram(3);
+
+        // then
+        assertTrue(histogram.isEmpty());
+    }
+
+    @Test
+    void testGetFileSizeHistogram() throws IOException {
+        // given
+        var dir = fs.getPath("Docs/");
+
+
+        var filesNames = IntStream.range(1, 11)
+                .mapToObj(i -> "file" + i + ".txt")
+                .toList();
+
+        var fileSizes = IntStream.range(1, 11)
+                .mapToObj(i -> i <= 5 ? 20 : 200 * i)
+                .map("a"::repeat)
+                .toList();
+
+        setupDirectoryWithContents(dir, filesNames, fileSizes);
+        fileService.loadFromPath(dir, defaultPattern);
+
+        // when
+        var histogram = fileService.getFileSizeHistogram(3).orElseThrow();
+
+        // then
+        assertEquals(20, histogram.min());
+        assertEquals(2000, histogram.max());
+        assertEquals(3, histogram.buckets().size());
+
+        assertEquals(5, histogram.buckets().get(0));
+        assertEquals(1, histogram.buckets().get(1));
+        assertEquals(4, histogram.buckets().get(2));
+    }
+
+    @Test
+    void testGetLastModifiedHistogram_NoFiles_ReturnsEmpty() {
+        // when
+        var histogram = fileService.getLastModifiedHistogram(3);
+
+        // then
+        assertTrue(histogram.isEmpty());
+    }
+
+    @Test
+    void testGetLastModifiedHistogram() throws IOException {
+        // given
+        var dir = fs.getPath("Docs/");
+        Files.createDirectory(dir);
+        for (int i = 1; i <= 10; i++) {
+            var path = dir.resolve("file" + i + ".txt");
+            Files.createFile(path);
+            Files.getLastModifiedTime(path);
+            Files.setLastModifiedTime(path, FileTime.from(i, TimeUnit.MILLISECONDS));
+        }
+
+        fileService.loadFromPath(dir, defaultPattern);
+
+        // when
+        var histogram = fileService.getLastModifiedHistogram(3).orElseThrow();
+
+        // then
+        assertEquals(1, histogram.min());
+        assertEquals(10, histogram.max());
+        assertEquals(3, histogram.buckets().size());
+
+        assertEquals(3, histogram.buckets().get(0));
+        assertEquals(3, histogram.buckets().get(1));
+        assertEquals(4, histogram.buckets().get(2));
+
+    }
 }
