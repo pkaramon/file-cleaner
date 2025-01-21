@@ -16,6 +16,8 @@ import pl.edu.agh.to2.service.FileService;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static javafx.collections.FXCollections.observableArrayList;
 
@@ -31,6 +33,10 @@ public class GroupFilesViewController {
     @FXML
     private Pane rootPane;
 
+    private TextField searchField;
+    private Button searchButton;
+    private Button resetButton;
+
     public GroupFilesViewController(FileService fileService) {
         this.fileService = fileService;
     }
@@ -38,6 +44,13 @@ public class GroupFilesViewController {
     @FXML
     private void initialize() {
         taskExecutor = new TaskExecutor(rootPane);
+
+        searchField = new TextField();
+        searchField.setPromptText("Search by file name...");
+        searchButton = new Button("Search");
+        resetButton = new Button("Reset");
+        searchButton.setOnAction(event -> refresh());
+        resetButton.setOnAction(event -> resetSearch());
     }
 
     public void show(Function<FileService, List<List<File>>> getFileGroups) {
@@ -46,21 +59,50 @@ public class GroupFilesViewController {
     }
 
     private void refresh() {
-        taskExecutor.run(() -> this.getFileGroups.apply(fileService), this::displayGroups);
+        String searchText = searchField.getText().toLowerCase().trim();
+        if (!searchText.isEmpty()) {
+            taskExecutor.run(() -> {
+                List<List<File>> allGroups = this.getFileGroups.apply(fileService);
+
+                Predicate<File> containsSearchText = file ->
+                        Path.of(file.getPath()).getFileName().toString().toLowerCase().contains(searchText);
+
+                return allGroups
+                        .stream()
+                        .filter(group -> group.stream().anyMatch(containsSearchText))
+                        .map(group -> group.stream()
+                                .filter(containsSearchText)
+                                .collect(Collectors.toList()))
+                        .collect(Collectors.toList());
+            }, this::displayGroups);
+        } else {
+            taskExecutor.run(() -> this.getFileGroups.apply(fileService), this::displayGroups);
+        }
     }
 
-    private void displayGroups(List<List<File>> groups) {
-        if (groups.isEmpty()) {
+    private void resetSearch() {
+        searchField.clear();
+        refresh();
+    }
+
+    private void displayGroups(List<List<File>> filteredGroups) {
+        if (filteredGroups.isEmpty()) {
             scrollPane.setContent(new Label("Nothing was found"));
             return;
         }
-
         VBox layout = new VBox(10);
-        for (List<File> group : groups) {
+
+        HBox searchLayout = new HBox(10);
+        searchLayout.setStyle("-fx-padding: 10;");
+        searchLayout.getChildren().addAll(new Label("Search:"), searchField, searchButton, resetButton);
+
+        layout.getChildren().add(searchLayout);
+
+        for (List<File> group : filteredGroups) {
             List<FileRow> fileRows = group
                     .stream()
                     .map(FileRow::new)
-                    .toList();
+                    .collect(Collectors.toList());
 
             TableView<FileRow> tableView = createTableView(observableArrayList(fileRows));
             HBox buttonLayout = displayButtons(group, tableView);
@@ -114,7 +156,7 @@ public class GroupFilesViewController {
     private TableView<FileRow> createTableView(ObservableList<FileRow> rows) {
         TableView<FileRow> tableView = new TableView<>();
         tableView.prefWidthProperty().bind(scrollPane.widthProperty().subtract(20));
-        tableView.getSelectionModel().setSelectionMode(javafx.scene.control.SelectionMode.MULTIPLE);
+        tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
         TableColumn<FileRow, String> nameColumn = new TableColumn<>("Path");
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("path"));

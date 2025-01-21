@@ -3,7 +3,7 @@ package pl.edu.agh.to2.command;
 public interface Command {
     void execute();
 
-    public void undo();
+    void undo();
 
-    public void redo();
+    void redo();
 }

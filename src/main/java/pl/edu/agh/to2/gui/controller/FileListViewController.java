@@ -24,26 +24,33 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Component
 public class FileListViewController {
+
     private final SpringFXMLLoader loader;
     private final FileService fileService;
     private final ActionLogRepository actionLogRepository;
+    private final Clock clock;
     private final CommandRegistry commandRegistry = new CommandRegistry();
-    private Clock clock;
     private TaskExecutor taskExecutor;
+    
     @FXML
     private Stage stage;
 
     @FXML
     private Pane rootPane;
+
     @FXML
     private TableView<FileRow> fileTableView;
+
     @FXML
     private TableColumn<FileRow, String> pathColumn;
+
     @FXML
     private TableColumn<FileRow, String> sizeColumn;
+
     @FXML
     private TableColumn<FileRow, String> hashColumn;
 
@@ -52,6 +59,9 @@ public class FileListViewController {
 
     @FXML
     private Button redoButton;
+
+    @FXML
+    private TextField searchField;
 
     private String directoryPath;
 
@@ -63,7 +73,6 @@ public class FileListViewController {
         this.actionLogRepository = actionLogRepository;
         this.clock = clock;
     }
-
 
     @FXML
     public void initialize() {
@@ -265,5 +274,26 @@ public class FileListViewController {
                 files.stream().map(FileRow::new).toList()
         );
         fileTableView.setItems(rows);
+    }
+
+    @FXML
+    private void onSearchClicked() {
+        String searchText = searchField.getText().toLowerCase().trim();
+        if (!searchText.isEmpty()) {
+            taskExecutor.run(() -> {
+
+                List<File> allFiles = fileService.findFilesInPath(Path.of(directoryPath));
+
+                return allFiles.stream()
+                        .filter(file -> {
+                            String fileName = Path.of(file.getPath()).getFileName().toString().toLowerCase();
+                            return fileName.contains(searchText);
+                        })
+                        .collect(Collectors.toList());
+            }, this::updateTable);
+        } else {
+            updateFileList();
+        }
+        searchField.clear();
     }
 }

@@ -35,7 +35,6 @@ public class FileService {
     private final ActionLogRepository actionLogRepository;
     private final FileHasher fileHasher;
 
-
     public FileService(FileRepository fileRepository,
                        Clock clock,
                        ActionLogRepository actionLogRepository,
@@ -45,7 +44,6 @@ public class FileService {
         this.actionLogRepository = actionLogRepository;
         this.fileHasher = fileHasher;
     }
-
 
     @Transactional
     public void loadFromPath(Path root, Pattern pattern) {
@@ -79,7 +77,6 @@ public class FileService {
             return fileList;
         }
         search(fileList, path, pattern);
-
         return fileList;
     }
 

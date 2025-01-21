@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.scene.control.*?>
 <?import javafx.scene.control.cell.PropertyValueFactory?>
 <?import javafx.scene.layout.BorderPane?>
@@ -25,37 +24,41 @@
 
                 <VBox spacing="20">
                     <Button text="Select new path" onAction="#onSelectNewPathClicked"/>
-                </VBox>
-
+                </VBox>                
                 <HBox spacing="10" alignment="CENTER">
                     <Button text="Undo" fx:id="undoButton" onAction="#onUndoClicked" disable="true"/>
                     <Button text="Redo" fx:id="redoButton" onAction="#onRedoClicked" disable="true"/>
                 </HBox>
-
             </VBox>
         </left>
 
         <center>
-            <TableView fx:id="fileTableView" style="-fx-padding: 10;">
-                <columns>
-                    <TableColumn text="Path" prefWidth="300" fx:id="pathColumn">
-                        <cellValueFactory>
-                            <PropertyValueFactory property="path"/>
-                        </cellValueFactory>
-                    </TableColumn>
-                    <TableColumn text="Size" prefWidth="180" fx:id="sizeColumn">
-                        <cellValueFactory>
-                            <PropertyValueFactory property="size"/>
-                        </cellValueFactory>
-                    </TableColumn>
+            <VBox spacing="10" alignment="CENTER" style="-fx-padding: 10;">
+                <HBox spacing="10" alignment="CENTER">
+                    <TextField fx:id="searchField" promptText="Search by file name..." style="-fx-min-width: 300px;"/>
+                    <Button text="Search" onAction="#onSearchClicked"/>
+                </HBox>
 
-                    <TableColumn text="Hash" prefWidth="180" fx:id="hashColumn">
-                        <cellValueFactory>
-                            <PropertyValueFactory property="hash"/>
-                        </cellValueFactory>
-                    </TableColumn>
-                </columns>
-            </TableView>
+                <TableView fx:id="fileTableView" style="-fx-padding: 10;">
+                    <columns>
+                        <TableColumn text="Path" prefWidth="300" fx:id="pathColumn">
+                            <cellValueFactory>
+                                <PropertyValueFactory property="path"/>
+                            </cellValueFactory>
+                        </TableColumn>
+                        <TableColumn text="Size" prefWidth="180" fx:id="sizeColumn">
+                            <cellValueFactory>
+                                <PropertyValueFactory property="size"/>
+                            </cellValueFactory>
+                        </TableColumn>
+                        <TableColumn text="Hash" prefWidth="180" fx:id="hashColumn">
+                            <cellValueFactory>
+                                <PropertyValueFactory property="hash"/>
+                            </cellValueFactory>
+                        </TableColumn>
+                    </columns>
+                </TableView>
+            </VBox>
         </center>
     </BorderPane>
 </StackPane>
