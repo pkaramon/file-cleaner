@@ -4,21 +4,22 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.springframework.stereotype.Component;
+import pl.edu.agh.to2.command.CommandRegistry;
+import pl.edu.agh.to2.command.DeleteActionCommand;
 import pl.edu.agh.to2.gui.utils.SpringFXMLLoader;
 import pl.edu.agh.to2.gui.utils.TaskExecutor;
 import pl.edu.agh.to2.model.File;
+import pl.edu.agh.to2.repository.ActionLogRepository;
 import pl.edu.agh.to2.service.FileService;
 
 import java.nio.file.Path;
+import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -28,8 +29,10 @@ import java.util.regex.Pattern;
 public class FileListViewController {
     private final SpringFXMLLoader loader;
     private final FileService fileService;
+    private final ActionLogRepository actionLogRepository;
+    private final CommandRegistry commandRegistry = new CommandRegistry();
+    private Clock clock;
     private TaskExecutor taskExecutor;
-
     @FXML
     private Stage stage;
 
@@ -44,13 +47,21 @@ public class FileListViewController {
     @FXML
     private TableColumn<FileRow, String> hashColumn;
 
+    @FXML
+    private Button undoButton;
+
+    @FXML
+    private Button redoButton;
+
     private String directoryPath;
 
     private String pattern;
 
-    public FileListViewController(SpringFXMLLoader loader, FileService fileService) {
+    public FileListViewController(SpringFXMLLoader loader, FileService fileService, ActionLogRepository actionLogRepository, Clock clock) {
         this.loader = loader;
         this.fileService = fileService;
+        this.actionLogRepository = actionLogRepository;
+        this.clock = clock;
     }
 
 
@@ -97,7 +108,14 @@ public class FileListViewController {
 
         if (!selectedRowsCopy.isEmpty()) {
             taskExecutor.run(() -> {
-                        selectedRowsCopy.forEach(row -> fileService.deleteFile(Path.of(row.getPath())));
+                        selectedRowsCopy.forEach(row -> {
+                                    DeleteActionCommand deleteCommand = new DeleteActionCommand(fileService, actionLogRepository, clock);
+                                    deleteCommand.setFileToBeDeleted(Path.of(row.getPath()));
+                                    commandRegistry.executeCommand(deleteCommand);
+                                    updateUndoRedoButtons();
+                                }
+
+                        );
                         return fileService.findFilesInPath(Path.of(directoryPath));
                     },
                     this::updateTable
@@ -136,7 +154,6 @@ public class FileListViewController {
         stage.show();
     }
 
-
     @FXML
     private void onReportsClicked() {
         showModal("/fxml/ReportsView.fxml", "Reports", controller -> {
@@ -159,10 +176,29 @@ public class FileListViewController {
         stage.showAndWait();
     }
 
+
+    @FXML
+    private void onUndoClicked() {
+        commandRegistry.undo();
+        updateFileList();
+        updateUndoRedoButtons();
+    }
+
+    @FXML
+    private void onRedoClicked() {
+        commandRegistry.redo();
+        updateFileList();
+        updateUndoRedoButtons();
+    }
+
+    private void updateUndoRedoButtons() {
+        undoButton.setDisable(!commandRegistry.canUndo());
+        redoButton.setDisable(!commandRegistry.canRedo());
+    }
+
     public void closeCurrentStage() {
         stage.close();
     }
-
 
     private Optional<Integer> askUserForMaxDistance() {
         Optional<Integer> result;
@@ -230,6 +266,4 @@ public class FileListViewController {
         );
         fileTableView.setItems(rows);
     }
-
-
 }
