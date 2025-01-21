@@ -90,7 +90,7 @@ public class FileService {
         }
     }
 
-    private void handleFile(List<Path> resultsList, Pattern pattern, Path file) throws IOException {
+    private void handleFile(List<Path> resultsList, Pattern pattern, Path file) {
         if (Files.isDirectory(file)) {
             search(resultsList, file, pattern);
         } else {
@@ -243,8 +243,5 @@ public class FileService {
                 .map(ArrayList::new)
                 .toList()
         );
-    }
-        public List<File> findFilesByName(String name) {
-        return fileRepository.findByPathContaining(name);
     }
 }

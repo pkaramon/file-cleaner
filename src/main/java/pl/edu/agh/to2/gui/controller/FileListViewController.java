@@ -12,11 +12,9 @@ import javafx.stage.Stage;
 import org.springframework.stereotype.Component;
 import pl.edu.agh.to2.command.CommandRegistry;
 import pl.edu.agh.to2.command.DeleteActionCommand;
-import pl.edu.agh.to2.gui.utils.TaskExecutor;
 import pl.edu.agh.to2.gui.utils.SpringFXMLLoader;
+import pl.edu.agh.to2.gui.utils.TaskExecutor;
 import pl.edu.agh.to2.model.File;
-import java.util.stream.Collectors;
-
 import pl.edu.agh.to2.repository.ActionLogRepository;
 import pl.edu.agh.to2.service.FileService;
 
@@ -25,6 +23,7 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Component
 public class FileListViewController {
@@ -32,10 +31,9 @@ public class FileListViewController {
     private final SpringFXMLLoader loader;
     private final FileService fileService;
     private final ActionLogRepository actionLogRepository;
-    private Clock clock;
-    private TaskExecutor taskExecutor;
+    private final Clock clock;
     private final CommandRegistry commandRegistry = new CommandRegistry();
-
+    private TaskExecutor taskExecutor;
     @FXML
     private Stage stage;
 
@@ -265,28 +263,24 @@ public class FileListViewController {
         fileTableView.setItems(rows);
     }
 
-@FXML
-private void onSearchClicked() {
-    String searchText = searchField.getText().toLowerCase().trim();
-    if (searchText != null && !searchText.isEmpty()) {
-        taskExecutor.run(() -> {
+    @FXML
+    private void onSearchClicked() {
+        String searchText = searchField.getText().toLowerCase().trim();
+        if (!searchText.isEmpty()) {
+            taskExecutor.run(() -> {
 
-            List<File> allFiles = fileService.findFilesInPath(Path.of(directoryPath));
-            
-            List<File> filteredFiles = allFiles.stream()
-                    .filter(file -> {
-                        String fileName = Path.of(file.getPath()).getFileName().toString().toLowerCase();
-                        return fileName.contains(searchText);
-                    })
-                    .collect(Collectors.toList());
-            
-            return filteredFiles;
-        }, filteredFiles -> {
-            updateTable(filteredFiles);
-        });
-    } else {
-        updateFileList();
+                List<File> allFiles = fileService.findFilesInPath(Path.of(directoryPath));
+
+                return allFiles.stream()
+                        .filter(file -> {
+                            String fileName = Path.of(file.getPath()).getFileName().toString().toLowerCase();
+                            return fileName.contains(searchText);
+                        })
+                        .collect(Collectors.toList());
+            }, this::updateTable);
+        } else {
+            updateFileList();
+        }
+        searchField.clear();
     }
-    searchField.clear();
-}
 }

@@ -16,6 +16,7 @@ import pl.edu.agh.to2.service.FileService;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static javafx.collections.FXCollections.observableArrayList;
@@ -48,7 +49,7 @@ public class GroupFilesViewController {
         searchField.setPromptText("Search by file name...");
         searchButton = new Button("Search");
         resetButton = new Button("Reset");
-        searchButton.setOnAction(event -> performSearch());
+        searchButton.setOnAction(event -> refresh());
         resetButton.setOnAction(event -> resetSearch());
     }
 
@@ -58,15 +59,37 @@ public class GroupFilesViewController {
     }
 
     private void refresh() {
-        taskExecutor.run(() -> this.getFileGroups.apply(fileService), this::displayGroups);
+        String searchText = searchField.getText().toLowerCase().trim();
+        if (!searchText.isEmpty()) {
+            taskExecutor.run(() -> {
+                List<List<File>> allGroups = this.getFileGroups.apply(fileService);
+
+                Predicate<File> containsSearchText = file ->
+                        Path.of(file.getPath()).getFileName().toString().toLowerCase().contains(searchText);
+
+                return allGroups
+                        .stream()
+                        .filter(group -> group.stream().anyMatch(containsSearchText))
+                        .map(group -> group.stream()
+                                .filter(containsSearchText)
+                                .collect(Collectors.toList()))
+                        .collect(Collectors.toList());
+            }, this::displayGroups);
+        } else {
+            taskExecutor.run(() -> this.getFileGroups.apply(fileService), this::displayGroups);
+        }
     }
 
-    private void displayGroups(List<List<File>> groups) {
-        if (groups.isEmpty()) {
+    private void resetSearch() {
+        searchField.clear();
+        refresh();
+    }
+
+    private void displayGroups(List<List<File>> filteredGroups) {
+        if (filteredGroups.isEmpty()) {
             scrollPane.setContent(new Label("Nothing was found"));
             return;
         }
-
         VBox layout = new VBox(10);
 
         HBox searchLayout = new HBox(10);
@@ -75,7 +98,7 @@ public class GroupFilesViewController {
 
         layout.getChildren().add(searchLayout);
 
-        for (List<File> group : groups) {
+        for (List<File> group : filteredGroups) {
             List<FileRow> fileRows = group
                     .stream()
                     .map(FileRow::new)
@@ -89,56 +112,6 @@ public class GroupFilesViewController {
         }
         scrollPane.setContent(layout);
     }
-
-private void performSearch() {
-    String searchText = searchField.getText().toLowerCase().trim();
-    if (searchText != null && !searchText.isEmpty()) {
-        taskExecutor.run(() -> {
-            List<List<File>> allGroups = this.getFileGroups.apply(fileService);
-            List<List<File>> filteredGroups = allGroups.stream()
-                    .map(group -> group.stream()
-                            .filter(file -> {
-                                String fileName = Path.of(file.getPath()).getFileName().toString().toLowerCase();
-                                return fileName.contains(searchText);
-                            })
-                            .collect(Collectors.toList()))
-                    .collect(Collectors.toList());
-            return filteredGroups;
-        }, filteredGroups -> {
-            displayGroupsWithSearch(filteredGroups);
-        });
-    }
-}
-
-
-    private void resetSearch() {
-        searchField.clear();
-        refresh();
-    }
-
-private void displayGroupsWithSearch(List<List<File>> filteredGroups) {
-    VBox layout = new VBox(10);
-
-    HBox searchLayout = new HBox(10);
-    searchLayout.setStyle("-fx-padding: 10;");
-    searchLayout.getChildren().addAll(new Label("Search:"), searchField, searchButton, resetButton);
-
-    layout.getChildren().add(searchLayout);
-
-    for (List<File> group : filteredGroups) {
-        List<FileRow> fileRows = group
-                .stream()
-                .map(FileRow::new)
-                .collect(Collectors.toList());
-
-        TableView<FileRow> tableView = createTableView(observableArrayList(fileRows));
-        HBox buttonLayout = displayButtons(group, tableView);
-        VBox tableLayout = new VBox(10, buttonLayout, tableView);
-
-        layout.getChildren().add(tableLayout);
-    }
-    scrollPane.setContent(layout);
-}
 
     private HBox displayButtons(List<File> files, TableView<FileRow> tableView) {
         Button deleteAllBtn = new Button("Delete All");
@@ -183,7 +156,7 @@ private void displayGroupsWithSearch(List<List<File>> filteredGroups) {
     private TableView<FileRow> createTableView(ObservableList<FileRow> rows) {
         TableView<FileRow> tableView = new TableView<>();
         tableView.prefWidthProperty().bind(scrollPane.widthProperty().subtract(20));
-        tableView.getSelectionModel().setSelectionMode(javafx.scene.control.SelectionMode.MULTIPLE);
+        tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
         TableColumn<FileRow, String> nameColumn = new TableColumn<>("Path");
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("path"));
@@ -200,11 +173,6 @@ private void displayGroupsWithSearch(List<List<File>> filteredGroups) {
 
         tableView.setItems(rows);
         tableView.setMinWidth(600);
-
-        if (rows.isEmpty()) {
-            Label noContentLabel = new Label("No content in table");
-            tableView.setPlaceholder(noContentLabel);
-        }
 
         return tableView;
     }

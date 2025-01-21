@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import pl.edu.agh.to2.model.ActionLog;
 import pl.edu.agh.to2.repository.ActionLogRepository;
-import pl.edu.agh.to2.repository.FileRepository;
 import pl.edu.agh.to2.service.FileService;
 import pl.edu.agh.to2.types.ActionType;
 
