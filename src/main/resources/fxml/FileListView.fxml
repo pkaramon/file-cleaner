@@ -21,6 +21,7 @@
                 <Button text="Show logs" onAction="#onShowLogsClicked"/>
                 <Button text="Find Duplicates" onAction="#onFindDuplicatesClicked"/>
                 <Button text="Find versions" onAction="#onFindVersionsClicked"/>
+                <Button text="Reports" onAction="#onReportsClicked"/>
 
                 <VBox spacing="20">
                     <Button text="Select new path" onAction="#onSelectNewPathClicked"/>

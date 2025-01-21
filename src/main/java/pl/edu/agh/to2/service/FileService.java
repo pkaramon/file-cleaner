@@ -9,6 +9,7 @@ import pl.edu.agh.to2.model.File;
 import pl.edu.agh.to2.repository.ActionLogRepository;
 import pl.edu.agh.to2.repository.EditDistanceResult;
 import pl.edu.agh.to2.repository.FileRepository;
+import pl.edu.agh.to2.repository.FileSizeStats;
 import pl.edu.agh.to2.types.ActionType;
 
 import java.io.IOException;
@@ -93,7 +94,7 @@ public class FileService {
         }
     }
 
-    private void handleFile(List<Path> resultsList, Pattern pattern, Path file) throws IOException {
+    private void handleFile(List<Path> resultsList, Pattern pattern, Path file) {
         if (Files.isDirectory(file)) {
             search(resultsList, file, pattern);
         } else {
@@ -104,7 +105,6 @@ public class FileService {
             }
         }
     }
-
 
     private String tryToHash(Path path) {
         try {
@@ -122,7 +122,6 @@ public class FileService {
     public List<File> findLargestFilesIn(Path path, int n) {
         return fileRepository.findLargestFilesIn(String.valueOf(path), n);
     }
-
 
     public List<List<File>> findDuplicatedGroups() {
         List<File> duplicates = fileRepository.findDuplicates();
@@ -151,7 +150,6 @@ public class FileService {
 
         actionLogRepository.save(actionLog);
     }
-
 
     @Transactional
     public void archiveFiles(List<File> files, Path zipFilePath) throws IOException {
@@ -207,16 +205,15 @@ public class FileService {
         }
     }
 
-    public String getWithoutExtension(String fileName) {
+    private String getWithoutExtension(String fileName) {
         int dotIndex = fileName.lastIndexOf('.');
         return (dotIndex == -1) ? fileName : fileName.substring(0, dotIndex);
     }
 
-    public String getExtension(String fileName) {
+    private String getExtension(String fileName) {
         int dotIndex = fileName.lastIndexOf('.');
         return (dotIndex == -1) ? "" : fileName.substring(dotIndex + 1);
     }
-
 
     public List<List<File>> findVersions(int maxDistance) {
         List<EditDistanceResult> similarFiles = fileRepository.findSimilarFileNames(maxDistance);
@@ -251,4 +248,42 @@ public class FileService {
                 .toList()
         );
     }
+
+    public Optional<FileSizeStats> getFileSizeStats() {
+        FileSizeStats stats = fileRepository.findFileSizeStats();
+        return stats.count() == 0 ? Optional.empty() : Optional.of(stats);
+    }
+
+    public Optional<Histogram> getFileSizeHistogram(int bucketCount) {
+        List<Long> sizes = fileRepository.findAllSizes();
+        return calculateHistogram(bucketCount, sizes);
+    }
+
+    public Optional<Histogram> getLastModifiedHistogram(int bucketCount) {
+        List<Long> lastModified = fileRepository.findAllLastModifiedInMilliseconds();
+        return calculateHistogram(bucketCount, lastModified);
+    }
+
+    private Optional<Histogram> calculateHistogram(int bucketCount, List<Long> data) {
+        if (data.isEmpty()) {
+            return Optional.empty();
+        }
+        long min = data.stream().min(Long::compareTo).orElseThrow();
+        long max = data.stream().max(Long::compareTo).orElseThrow();
+        double bucketSize = (double) (max - min) / bucketCount;
+        List<Long> buckets = new ArrayList<>(Collections.nCopies(bucketCount, 0L));
+        for (Long value : data) {
+            int bucketIndex = (int) ((value - min) / bucketSize);
+            if (bucketIndex == bucketCount) {
+                bucketIndex--;
+            }
+            buckets.set(bucketIndex, buckets.get(bucketIndex) + 1);
+        }
+        return Optional.of(new Histogram(min, max, buckets));
+    }
+
+    public Map<String, Long> getFileCountsByExtension() {
+        return fileRepository.findFileCountsByExtension();
+    }
 }
+
