@@ -86,10 +86,6 @@ public class GroupFilesViewController {
     }
 
     private void displayGroups(List<List<File>> filteredGroups) {
-        if (filteredGroups.isEmpty()) {
-            scrollPane.setContent(new Label("Nothing was found"));
-            return;
-        }
         VBox layout = new VBox(10);
 
         HBox searchLayout = new HBox(10);
