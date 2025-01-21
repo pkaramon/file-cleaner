@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.cell.PropertyValueFactory?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.BorderPane?>
@@ -16,21 +15,12 @@
             <TableView fx:id="tableView" style="-fx-padding: 10;">
                 <columns>
                     <TableColumn text="Date" prefWidth="180" fx:id="dateColumn">
-                        <cellValueFactory>
-                            <PropertyValueFactory property="date"/>
-                        </cellValueFactory>
                     </TableColumn>
 
                     <TableColumn text="Description" prefWidth="300" fx:id="descColumn">
-                        <cellValueFactory>
-                            <PropertyValueFactory property="desc"/>
-                        </cellValueFactory>
                     </TableColumn>
 
                     <TableColumn text="Type" prefWidth="300" fx:id="typeColumn">
-                        <cellValueFactory>
-                            <PropertyValueFactory property="type"/>
-                        </cellValueFactory>
                     </TableColumn>
                 </columns>
             </TableView>

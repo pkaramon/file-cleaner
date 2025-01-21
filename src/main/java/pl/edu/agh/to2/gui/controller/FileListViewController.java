@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -34,6 +35,7 @@ public class FileListViewController {
     private final Clock clock;
     private final CommandRegistry commandRegistry = new CommandRegistry();
     private TaskExecutor taskExecutor;
+    
     @FXML
     private Stage stage;
 
@@ -132,35 +134,23 @@ public class FileListViewController {
 
     @FXML
     public void onFindDuplicatesClicked() {
-        var res = loader.load("/fxml/GroupFilesView.fxml");
-        Stage stage = new Stage();
-        stage.setTitle("Duplicated Files");
-        stage.setScene(res.scene());
-        stage.initModality(Modality.APPLICATION_MODAL);
-        stage.setMinHeight(720);
-        stage.setMinWidth(1280);
-        var controller = (GroupFilesViewController) res.controller();
-        controller.show(FileService::findDuplicatedGroups);
-        stage.showAndWait();
+        showModal("/fxml/GroupFilesView.fxml", "Find Duplicates", controller -> {
+            var ctrl = (GroupFilesViewController) controller;
+            ctrl.show(FileService::findDuplicatedGroups);
+        });
     }
 
     @FXML
     private void onFindVersionsClicked() {
-        var res = loader.load("/fxml/GroupFilesView.fxml");
-        Stage stage = new Stage();
-        stage.setTitle("Versioned Files");
-        stage.setScene(res.scene());
-        stage.initModality(Modality.APPLICATION_MODAL);
-        stage.setMinHeight(720);
-        stage.setMinWidth(1280);
-        var controller = (GroupFilesViewController) res.controller();
-        Optional<Integer> maxDistance = askUserForMaxDistance();
-        if (maxDistance.isEmpty()) {
-            return;
-        }
-        controller.show(fs -> fs.findVersions(maxDistance.get()));
-        stage.showAndWait();
+        showModal("/fxml/GroupFilesView.fxml", "Versioned Files", controller -> {
+            Optional<Integer> maxDistance = askUserForMaxDistance();
+            if (maxDistance.isEmpty()) {
+                return;
+            }
+            ((GroupFilesViewController) controller).show(fs -> fs.findVersions(maxDistance.get()));
+        });
     }
+
 
     @FXML
     private void onSelectNewPathClicked() {
@@ -172,6 +162,29 @@ public class FileListViewController {
 
         stage.show();
     }
+
+    @FXML
+    private void onReportsClicked() {
+        showModal("/fxml/ReportsView.fxml", "Reports", controller -> {
+            var ctrl = (ReportsViewController) controller;
+            ctrl.show();
+        });
+    }
+
+    private void showModal(String fxmlPath, String windowTitle, Consumer<Object> configureController) {
+        var res = loader.load(fxmlPath);
+        Stage stage = new Stage();
+        stage.setTitle(windowTitle);
+        stage.setScene(res.scene());
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setMinHeight(720);
+        stage.setMinWidth(1280);
+
+        configureController.accept(res.controller());
+
+        stage.showAndWait();
+    }
+
 
     @FXML
     private void onUndoClicked() {
