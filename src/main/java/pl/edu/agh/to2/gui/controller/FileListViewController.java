@@ -25,6 +25,10 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.awt.Desktop;
+import java.io.IOException;
+import java.nio.file.Path;
+
 
 @Component
 public class FileListViewController {
@@ -81,6 +85,7 @@ public class FileListViewController {
         hashColumn.setCellValueFactory(new PropertyValueFactory<>("hash"));
         fileTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         taskExecutor = new TaskExecutor(rootPane);
+
     }
 
     public void setDirectoryPath(String path) {
@@ -295,5 +300,40 @@ public class FileListViewController {
             updateFileList();
         }
         searchField.clear();
+    }
+
+    @FXML
+    public void onOpenFileClicked() {
+        var selectedRows = fileTableView.getSelectionModel().getSelectedItems();
+
+        if (selectedRows.isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("No File Selected");
+            alert.setHeaderText("Please select at least one file to open.");
+            alert.showAndWait();
+            return;
+        }
+
+        if (!Desktop.isDesktopSupported()) {
+            System.out.println("Desktop is not supported on this system.");
+            return;
+        }
+
+        Desktop desktop = Desktop.getDesktop();
+
+        for (FileRow row : selectedRows) {
+            java.io.File file = new java.io.File(row.getPath());
+
+            if (file.exists()) {
+                try {
+                    desktop.open(file);
+                } catch (IOException e) {
+                    System.err.println("Error opening file: " + file.getAbsolutePath());
+                    e.printStackTrace();
+                }
+            } else {
+                System.out.println("File does not exist: " + file.getAbsolutePath());
+            }
+        }
     }
 }
