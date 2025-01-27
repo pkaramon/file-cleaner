@@ -146,3 +146,32 @@ oraz klasa odpowiedzialna za hashowanie plików: `SHA256FileHasherTest`.
 W celu testowania operacji na systemie plików używamy biblioteki Jimfs, która tworzy
 system plików w pamięci operacyjnej, co upraszcza oraz przyśpiesza testy. 
 
+
+## Milestone 3
+
+### Podział pracy
+
+- **Tomasz Kurcoń** - implementacja funkcjonalności `undo` i `redo` dla usuwania plików, wyświetlanie odpowiednich action logów, dodanie związanego z tym ui 
+- **Filip Bieńkowski** - 
+- **Piotr Karamon** - 
+- **Jakub Zawistowski** - 
+
+### Stan projektu i krótki opis implemetnacji poszczególnych funkcjonalności
+
+Do aplikacji zostały dodane nowe ulepszenia i funkcje:
+
+#### 1. Operacje `Undo` i `Redo`
+
+Na widoku głównym aplikacji pojawiły się dwa buttony `Undo` oraz `Redo`. Umożliwiają one cofnięcie operacji lub ponowne jej wykonanie (w tym przypadku jest to usuwanie pliku). Implementacja została oparta o wzorzec `Command`.
+
+  - **Command** - jest to interfejs, który realizują nasze operacje. Zawiera on metody `execute` - odpowiedzialną za daną akcję oraz `undo` i `redo`, które są odpowiedzialne za główną funkcjonalność,
+  - **DeleteActionCommand** - jest to klasa realizująca interfejs `Command`.
+  - **CommandRegistry** - to klasa, która przechowuje w dwóch listach (undo i redo stacks) operacje (`Commands`). Jest odpowiedzialna za poprawność stanu funkcjonalności undo/redo i dlatego właśnie za jej pomocą wykonujemy akcje w metodzie `executeCommand`.
+
+Usuwając jakiś plik, tak naprawdę przenosimy go do tymczasowo utworzonego folderu `.trash`. Jeśli użytkownik wykonuje `undo`, to wtedy z powrotem z tego folderu przenoszony jest on do początkowej lokalizacji. Jeśli natomiast tego nie zrobi, to po zamknięciu aplikacji folder `.trash` jest usuwany z całą swoją zawartością.
+Wykorzystujemy do tego adnotację `@PreDestroy` służącą do oznaczenia metody, która powinna zostać wykonana tuż przed "zniszczeniem" komponentu zarządzanego przez Springa (w naszym przypadku przed zamknięciem aplikacji).
+
+Dodana została również nowa wartość `DELETE_UNDO` w enumie `ActionType`. Metoda `undo` klasy `DeleteActionCommand` tworzy nowy `ActionLog`, dzięki czemu możemy go zobaczyć w widoku `Action Logs`. 
+
+
+
