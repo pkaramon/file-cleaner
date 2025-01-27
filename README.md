@@ -152,7 +152,7 @@ system plików w pamięci operacyjnej, co upraszcza oraz przyśpiesza testy.
 ### Podział pracy
 
 - **Tomasz Kurcoń** - implementacja funkcjonalności `undo` i `redo` dla usuwania plików, wyświetlanie odpowiednich action logów, dodanie związanego z tym ui 
-- **Filip Bieńkowski** - 
+- **Filip Bieńkowski** - implementacja funkcjonalności wyszukiwania plików w UI na trzech widokach aplikacji.
 - **Piotr Karamon** - 
 - **Jakub Zawistowski** - 
 
@@ -173,5 +173,9 @@ Wykorzystujemy do tego adnotację `@PreDestroy` służącą do oznaczenia metody
 
 Dodana została również nowa wartość `DELETE_UNDO` w enumie `ActionType`. Metoda `undo` klasy `DeleteActionCommand` tworzy nowy `ActionLog`, dzięki czemu możemy go zobaczyć w widoku `Action Logs`. 
 
+#### 2. Wyszukiwanie plików w UI
 
+W aplikacji wprowadzono funkcję wyszukiwania plików, dostępną na trzech głównych widokach: widoku listy plików, widoku grup duplikatów oraz widoku grup wersji.
 
+Dodano pole wyszukiwania z przyciskiem do filtrowania wyników. Wyszukiwanie uwzględnia nazwy końcowych plików w strukturze katalogu. Po wprowadzeniu tekstu wyszukiwania lista jest automatycznie aktualizowana, wyświetlając pasujące pliki. Dla widoku grup duplikatów oraz grup wersji wykorzystano metodę `performSearch`, która iteruje przez grupy i dopasowuje pliki do frazy wyszukiwania. Wyniki są wyświetlane w dynamicznie tworzonych tabelach.
+Na każdym z ekranów zadbano o dynamiczną aktualizację widoku po wyszukiwaniu oraz opcję resetowania wyników.
