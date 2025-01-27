@@ -59,7 +59,8 @@ Możemy również usunąć zaznaczone przez nas pliki.
 
 ### Podział pracy
 
-- **Tomasz Kurcoń** - dodanie okien dialogowych pozwalających na wybór ilości największych plików do wyświetlenia, wpisywania wyrażeń regularnych do filtrowania plików, ponownego wyboru ścieżki
+- **Tomasz Kurcoń** - dodanie okien dialogowych pozwalających na wybór ilości największych plików do wyświetlenia,
+  wpisywania wyrażeń regularnych do filtrowania plików, ponownego wyboru ścieżki
 - **Filip Bieńkowski** - stworzenie ui dla znajdowania duplikatów oraz wyświetlania action logów,
 - **Piotr Karamon** - dodanie znajdowania plików "wersji", action logów, aktualizacja dokumentacji
 - **Jakub Zawistowski** - dodanie znajdowania duplikatów plików
@@ -112,6 +113,12 @@ Warstwa logiki biznesowej:
   posiada jedną metodę do pobrania wszystkich logów.
 - **FileHasher** - interfejs, który odpowiada za hashowanie plików
 - **SHA256FileHasher** - implementacja interfejsu FileHasher, która używa algorytmu SHA-256 do hashowania plików.
+- **Command** - jest to interfejs, który realizują nasze operacje. Zawiera on metody `execute` - odpowiedzialną za daną
+  akcję oraz `undo` i `redo`, które są odpowiedzialne za główną funkcjonalność,
+- **DeleteActionCommand** - jest to klasa realizująca interfejs `Command`.
+- **CommandRegistry** - to klasa, która przechowuje w dwóch listach (undo i redo stacks) operacje (`Commands`). Jest
+  odpowiedzialna za poprawność stanu funkcjonalności undo/redo i dlatego właśnie za jej pomocą wykonujemy akcje w
+  metodzie `executeCommand`.
 
 Warstwa persystencji:
 
@@ -144,16 +151,16 @@ W testach musimy korzystać z bazy PostgreSQL bo wykorzystujemy funkcję `levens
 mają proste bazy do testów np. H2. Testowane są klasy logiki biznesowej: `ActionLogServiceTest` i `FileServiceTest`
 oraz klasa odpowiedzialna za hashowanie plików: `SHA256FileHasherTest`.
 W celu testowania operacji na systemie plików używamy biblioteki Jimfs, która tworzy
-system plików w pamięci operacyjnej, co upraszcza oraz przyśpiesza testy. 
-
+system plików w pamięci operacyjnej, co upraszcza oraz przyśpiesza testy.
 
 ## Milestone 3
 
 ### Podział pracy
 
-- **Tomasz Kurcoń** - implementacja funkcjonalności `undo` i `redo` dla usuwania plików, wyświetlanie odpowiednich action logów, dodanie związanego z tym ui 
+- **Tomasz Kurcoń** - implementacja funkcjonalności `undo` i `redo` dla usuwania plików, wyświetlanie odpowiednich
+  action logów, dodanie związanego z tym ui
 - **Filip Bieńkowski** - implementacja funkcjonalności wyszukiwania plików w UI na trzech widokach aplikacji.
-- **Piotr Karamon** - 
+- **Piotr Karamon** - implementacja widoku statystyk/raportów, funkcjonalność + ui
 - **Jakub Zawistowski** - Otwieranie plików
 
 ### Stan projektu i krótki opis implemetnacji poszczególnych funkcjonalności
@@ -162,20 +169,39 @@ Do aplikacji zostały dodane nowe ulepszenia i funkcje:
 
 #### 1. Operacje `Undo` i `Redo`
 
-Na widoku głównym aplikacji pojawiły się dwa buttony `Undo` oraz `Redo`. Umożliwiają one cofnięcie operacji lub ponowne jej wykonanie (w tym przypadku jest to usuwanie pliku). Implementacja została oparta o wzorzec `Command`.
+Na widoku głównym aplikacji pojawiły się dwa buttony `Undo` oraz `Redo`. Umożliwiają one cofnięcie operacji lub ponowne
+jej wykonanie (w tym przypadku jest to usuwanie pliku). Implementacja została oparta o wzorzec `Command`.
 
-  - **Command** - jest to interfejs, który realizują nasze operacje. Zawiera on metody `execute` - odpowiedzialną za daną akcję oraz `undo` i `redo`, które są odpowiedzialne za główną funkcjonalność,
-  - **DeleteActionCommand** - jest to klasa realizująca interfejs `Command`.
-  - **CommandRegistry** - to klasa, która przechowuje w dwóch listach (undo i redo stacks) operacje (`Commands`). Jest odpowiedzialna za poprawność stanu funkcjonalności undo/redo i dlatego właśnie za jej pomocą wykonujemy akcje w metodzie `executeCommand`.
+Usuwając jakiś plik, tak naprawdę przenosimy go do tymczasowo utworzonego folderu `.trash`. Jeśli użytkownik wykonuje
+`undo`, to wtedy z powrotem z tego folderu przenoszony jest on do początkowej lokalizacji. Jeśli natomiast tego nie
+zrobi, to po zamknięciu aplikacji folder `.trash` jest usuwany z całą swoją zawartością.
+Wykorzystujemy do tego adnotację `@PreDestroy` służącą do oznaczenia metody, która powinna zostać wykonana tuż przed "
+zniszczeniem" komponentu zarządzanego przez Springa (w naszym przypadku przed zamknięciem aplikacji).
 
-Usuwając jakiś plik, tak naprawdę przenosimy go do tymczasowo utworzonego folderu `.trash`. Jeśli użytkownik wykonuje `undo`, to wtedy z powrotem z tego folderu przenoszony jest on do początkowej lokalizacji. Jeśli natomiast tego nie zrobi, to po zamknięciu aplikacji folder `.trash` jest usuwany z całą swoją zawartością.
-Wykorzystujemy do tego adnotację `@PreDestroy` służącą do oznaczenia metody, która powinna zostać wykonana tuż przed "zniszczeniem" komponentu zarządzanego przez Springa (w naszym przypadku przed zamknięciem aplikacji).
-
-Dodana została również nowa wartość `DELETE_UNDO` w enumie `ActionType`. Metoda `undo` klasy `DeleteActionCommand` tworzy nowy `ActionLog`, dzięki czemu możemy go zobaczyć w widoku `Action Logs`. 
+Dodana została również nowa wartość `DELETE_UNDO` w enumie `ActionType`. Metoda `undo` klasy `DeleteActionCommand`
+tworzy nowy `ActionLog`, dzięki czemu możemy go zobaczyć w widoku `Action Logs`.
 
 #### 2. Wyszukiwanie plików w UI
 
-W aplikacji wprowadzono funkcję wyszukiwania plików, dostępną na trzech głównych widokach: widoku listy plików, widoku grup duplikatów oraz widoku grup wersji.
+W aplikacji wprowadzono funkcję wyszukiwania plików, dostępną na trzech głównych widokach: widoku listy plików, widoku
+grup duplikatów oraz widoku grup wersji.
 
-Dodano pole wyszukiwania z przyciskiem do filtrowania wyników. Wyszukiwanie uwzględnia nazwy końcowych plików w strukturze katalogu. Po wprowadzeniu tekstu wyszukiwania lista jest automatycznie aktualizowana, wyświetlając pasujące pliki. Dla widoku grup duplikatów oraz grup wersji wykorzystano metodę `performSearch`, która iteruje przez grupy i dopasowuje pliki do frazy wyszukiwania. Wyniki są wyświetlane w dynamicznie tworzonych tabelach.
+Dodano pole wyszukiwania z przyciskiem do filtrowania wyników. Wyszukiwanie uwzględnia nazwy końcowych plików w
+strukturze katalogu. Po wprowadzeniu tekstu wyszukiwania lista jest automatycznie aktualizowana, wyświetlając pasujące
+pliki. Dla widoku grup duplikatów oraz grup wersji wykorzystano metodę `performSearch`, która iteruje przez grupy i
+dopasowuje pliki do frazy wyszukiwania. Wyniki są wyświetlane w dynamicznie tworzonych tabelach.
 Na każdym z ekranów zadbano o dynamiczną aktualizację widoku po wyszukiwaniu oraz opcję resetowania wyników.
+
+#### 3. Statystyki i raporty
+
+W aplikacji dodano nowy widok, który pozwala na wyświetlenie statystyk dotyczących plików:
++ liczba plików
++ min, max, avg, sd rozmiaru plików
++ histogram rozmiarów plików, daty ostatniej modyfikacji
++ tabela z informacją o ilości plików o danym rozszerzeniu
+
+W klasie `FileService` zostały dodane metody obliczające potrzebne stastyki/histogramy.
+Do tych metod zostały napisane testy.
+Pojawiła się nowa klasa widoku `ReportsViewController`,
+która odpowiada za wyświetlanie statystyk oraz raportów.
+
