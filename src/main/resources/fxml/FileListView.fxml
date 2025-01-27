@@ -17,6 +17,7 @@
                 <Button text="Show All" onAction="#onShowAllClicked"/>
                 <Button text="Largest" onAction="#onLargestClicked"/>
                 <Button text="Delete" onAction="#onDeleteClicked"/>
+                <Button text="Otwórz" onAction="#onOpenFileClicked"/>
                 <Button text="Show logs" onAction="#onShowLogsClicked"/>
                 <Button text="Find Duplicates" onAction="#onFindDuplicatesClicked"/>
                 <Button text="Find versions" onAction="#onFindVersionsClicked"/>
@@ -24,7 +25,7 @@
 
                 <VBox spacing="20">
                     <Button text="Select new path" onAction="#onSelectNewPathClicked"/>
-                </VBox>                
+                </VBox>
                 <HBox spacing="10" alignment="CENTER">
                     <Button text="Undo" fx:id="undoButton" onAction="#onUndoClicked" disable="true"/>
                     <Button text="Redo" fx:id="redoButton" onAction="#onRedoClicked" disable="true"/>

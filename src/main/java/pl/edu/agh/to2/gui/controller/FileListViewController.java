@@ -4,11 +4,15 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import pl.edu.agh.to2.command.CommandRegistry;
 import pl.edu.agh.to2.command.DeleteActionCommand;
@@ -18,6 +22,8 @@ import pl.edu.agh.to2.model.File;
 import pl.edu.agh.to2.repository.ActionLogRepository;
 import pl.edu.agh.to2.service.FileService;
 
+import java.awt.*;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.List;
@@ -26,16 +32,17 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+
 @Component
 public class FileListViewController {
-
+    private static final Logger logger = LoggerFactory.getLogger(FileListViewController.class);
     private final SpringFXMLLoader loader;
     private final FileService fileService;
     private final ActionLogRepository actionLogRepository;
     private final Clock clock;
     private final CommandRegistry commandRegistry = new CommandRegistry();
     private TaskExecutor taskExecutor;
-    
+
     @FXML
     private Stage stage;
 
@@ -81,6 +88,7 @@ public class FileListViewController {
         hashColumn.setCellValueFactory(new PropertyValueFactory<>("hash"));
         fileTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         taskExecutor = new TaskExecutor(rootPane);
+
     }
 
     public void setDirectoryPath(String path) {
@@ -295,5 +303,39 @@ public class FileListViewController {
             updateFileList();
         }
         searchField.clear();
+    }
+
+    @FXML
+    public void onOpenFileClicked() {
+        var selectedRows = fileTableView.getSelectionModel().getSelectedItems();
+
+        if (selectedRows.isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("No File Selected");
+            alert.setHeaderText("Please select at least one file to open.");
+            alert.showAndWait();
+            return;
+        }
+
+        if (!Desktop.isDesktopSupported()) {
+            logger.error("Desktop is not supported on this system.");
+            return;
+        }
+
+        Desktop desktop = Desktop.getDesktop();
+
+        for (FileRow row : selectedRows) {
+            java.io.File file = new java.io.File(row.getPath());
+
+            if (file.exists()) {
+                try {
+                    desktop.open(file);
+                } catch (IOException e) {
+                    logger.error("Error opening file: {}", file.getAbsolutePath(), e);
+                }
+            } else {
+                logger.error("File does not exist: {}", file.getAbsolutePath());
+            }
+        }
     }
 }

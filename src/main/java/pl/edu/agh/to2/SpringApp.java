@@ -7,6 +7,7 @@ import pl.edu.agh.to2.gui.App;
 @SpringBootApplication
 public class SpringApp {
     public static void main(String[] args) {
+        System.setProperty("java.awt.headless", "false");
         Application.launch(App.class, args);
     }
 }
