@@ -154,7 +154,7 @@ system plików w pamięci operacyjnej, co upraszcza oraz przyśpiesza testy.
 - **Tomasz Kurcoń** - implementacja funkcjonalności `undo` i `redo` dla usuwania plików, wyświetlanie odpowiednich action logów, dodanie związanego z tym ui 
 - **Filip Bieńkowski** - implementacja funkcjonalności wyszukiwania plików w UI na trzech widokach aplikacji.
 - **Piotr Karamon** - 
-- **Jakub Zawistowski** - 
+- **Jakub Zawistowski** - Otwieranie plików
 
 ### Stan projektu i krótki opis implemetnacji poszczególnych funkcjonalności
 
