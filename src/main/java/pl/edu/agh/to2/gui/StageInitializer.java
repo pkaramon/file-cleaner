@@ -23,7 +23,7 @@ public class StageInitializer implements ApplicationListener<StageReadyEvent> {
         SpringFXMLLoader loader = context.getBean(SpringFXMLLoader.class);
         Scene scene = loader.load("/fxml/MainView.fxml").scene();
         primaryStage.setScene(scene);
-        primaryStage.setTitle("File Explorer");
+        primaryStage.setTitle("File Cleaner");
         primaryStage.show();
     }
 }

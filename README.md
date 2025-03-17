@@ -1,4 +1,9 @@
-# Technologie obiektowe - Projekt
+# File Cleaner
+
+![](./docs/main.png)
+
+Aplikacja umożliwia znajdowanie i zarządzanie
+zduplikowanymi plikami, największymi, plikami "wersji" (np. `main_v1.c`, `main_v2.c` etc).
 
 ## Setup
 
@@ -23,9 +28,9 @@
 
 **3. Uruchom aplikację:**
 
-  ```bash
-  ./gradlew run
-  ```
+```bash
+./gradlew run
+```
 
 ### Zależności:
 
@@ -53,7 +58,7 @@ Warstwa logiki biznesowej:
 
 - **File** - encja, klasa reprezentująca plik w bazie danych, zawiera podstawowe informacje, takie jak nazwa, rozmiar,
   ścieżka, data ostatniej modifikacji, hash zawartości.
-- **ActionLog** - encja, klasa reprezentująca logi akcji, zawiera następujące informacje:  czas wykonania, opis,
+- **ActionLog** - encja, klasa reprezentująca logi akcji, zawiera następujące informacje: czas wykonania, opis,
   typ akcji.
 - **FileService** - serwis, który odpowiada za operacje na plikach, takie jak zapisywanie do bazy danych,
   szukanie największych plików, usuwanie plików, szukanie duplikatów, szukanie plików "wersji",
@@ -102,9 +107,6 @@ oraz klasa odpowiedzialna za hashowanie plików: `SHA256FileHasherTest`.
 W celu testowania operacji na systemie plików używamy biblioteki Jimfs, która tworzy
 system plików w pamięci operacyjnej, co upraszcza oraz przyśpiesza testy.
 
-
-
-
 ## Milestone 1
 
 ### Podział pracy
@@ -148,9 +150,9 @@ Za pomocą przycisków na głównym widoku aplikacji można:
   Do hashowania używamy algorytmu SHA-256. Po kliknięciu na przycisk "Find duplicates" aplikacja
   wyświetla duplikaty w postaci listy tabel. W każdej osobnej tabeli znajdują się pliki, które są duplikatami.
   Każda tabela posiada trzy przyciski:
-    - "Delete All" - usuwa wszystkie pliki z tabeli
-    - "Delete Selected" - usuwa zaznaczone pliki
-    - "Archive" - zapisuje pliki do archiwum zip
+  - "Delete All" - usuwa wszystkie pliki z tabeli
+  - "Delete Selected" - usuwa zaznaczone pliki
+  - "Archive" - zapisuje pliki do archiwum zip
 - Znaleźć pliki "wersji", czyli pliki które mają bardzo podobne nazwy, jak np. "text_v1.txt", "text_v2.txt" ...
   Aby określić podobieństwo nazw plików używamy algorytmu Levenshteina.
   Po kliknięciu 'Find versions' otwiera się okno dialogowe, w którym można ustawić maksymalną odległość Levenshteina
@@ -198,13 +200,13 @@ Na każdym z ekranów zadbano o dynamiczną aktualizację widoku po wyszukiwaniu
 #### 3. Statystyki i raporty
 
 W aplikacji dodano nowy widok, który pozwala na wyświetlenie statystyk dotyczących plików:
-+ liczba plików
-+ min, max, avg, sd rozmiaru plików
-+ histogram rozmiarów plików, daty ostatniej modyfikacji
-+ tabela z informacją o ilości plików o danym rozszerzeniu
+
+- liczba plików
+- min, max, avg, sd rozmiaru plików
+- histogram rozmiarów plików, daty ostatniej modyfikacji
+- tabela z informacją o ilości plików o danym rozszerzeniu
 
 W klasie `FileService` zostały dodane metody obliczające potrzebne stastyki/histogramy.
 Do tych metod zostały napisane testy.
 Pojawiła się nowa klasa widoku `ReportsViewController`,
 która odpowiada za wyświetlanie statystyk oraz raportów.
-

@@ -165,7 +165,7 @@ public class FileListViewController {
         Scene scene = loader.load("/fxml/MainView.fxml").scene();
 
         Stage stage = new Stage();
-        stage.setTitle("File Explorer");
+        stage.setTitle("File Cleaner");
         stage.setScene(scene);
 
         stage.show();

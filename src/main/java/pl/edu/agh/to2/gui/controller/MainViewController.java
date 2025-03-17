@@ -72,7 +72,7 @@ public class MainViewController {
         newStage.setMinHeight(720);
         newStage.setMinWidth(1280);
         controller.setStage(newStage);
-        newStage.setTitle("File Explorer");
+        newStage.setTitle("File Cleaner");
         newStage.show();
     }
 
